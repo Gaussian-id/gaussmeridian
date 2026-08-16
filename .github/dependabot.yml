@@ -1,17 +1,127 @@
+# =============================================================================
+# Dependabot.
+#
+# Every ecosystem below uses `groups:`, which is not optional here. Without it
+# Dependabot opens ONE PULL REQUEST PER DEPENDENCY: the first activation of the
+# ungrouped version of this file opened 30 PRs in under three minutes. Grouped,
+# the same work arrives as at most two PRs per ecosystem per week — one for
+# minor/patch, one for major — and `open-pull-requests-limit` is sized to that,
+# not to the dependency count.
+#
+# Majors are NOT proposed. This repo tracks latest *stable*: minor and patch
+# land automatically, majors are adopted deliberately by a human with CI green.
+#
+# The reason is concrete, not theoretical. The cargo-major batch (63 updates)
+# did not compile: sha2/digest replaced GenericArray with Array, which no longer
+# implements LowerHex, breaking every `format!("{:x}", hasher.finalize())` across
+# 6 files — including call sites that compute hash-pinned artifacts, where a
+# subtly different encoding silently changes a hash that is pinned as evidence.
+# The webui-major batch carried typescript ^5 -> ^7, eslint ^9 -> ^10 and
+# @tanstack/react-table 8 -> 9, a breaking rewrite touching 15 files.
+#
+# To take a major: bump it by hand, one ecosystem at a time, and let CI prove it.
+# =============================================================================
 version: 2
 updates:
-  - package-ecosystem: cargo
-    directory: /gaussrouter
+  # -----------------------------------------------------------------------
+  # Rust workspace (gaussmeridian/Cargo.toml)
+  # -----------------------------------------------------------------------
+  - package-ecosystem: "cargo"
+    directory: "/gaussmeridian"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-  - package-ecosystem: npm
-    directory: /webui
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    groups:
+      cargo-minor-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # -----------------------------------------------------------------------
+  # WebUI (webui/package.json, pnpm-lock.yaml)
+  # -----------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/webui"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-  - package-ecosystem: github-actions
-    directory: /
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    groups:
+      webui-minor-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+      - "webui"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # -----------------------------------------------------------------------
+  # GitHub Actions workflows
+  # -----------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns: ["*"]
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+
+  # -----------------------------------------------------------------------
+  # Docker base images. Three directories, one group each — they update
+  # independently and a shared group would couple unrelated Dockerfiles.
+  # -----------------------------------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/gaussmeridian"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      docker-gateway:
+        patterns: ["*"]
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: "docker"
+    directory: "/gaussmeridian/scripts/mock-provider"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      docker-mock-provider:
+        patterns: ["*"]
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: "docker"
+    directory: "/webui"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      docker-webui:
+        patterns: ["*"]
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps)"

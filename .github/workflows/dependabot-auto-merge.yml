@@ -1,0 +1,57 @@
+# =============================================================================
+# Auto-merge Dependabot updates.
+#
+# Dependabot proposes only minor and patch updates in this repository — majors
+# are filtered out in .github/dependabot.yml and adopted deliberately by a
+# human. That makes these pull requests safe to land without review, but NOT
+# without proof: this workflow enables GitHub's auto-merge, which holds the
+# pull request until every required status check passes and merges it only
+# then. A red build is never merged; it simply stays open.
+#
+# The semver guard below is defence in depth. If the ignore rules in
+# dependabot.yml are ever loosened, a major arriving here is left alone for a
+# human rather than merged on the strength of a green build — a major can
+# compile cleanly and still be a breaking API change.
+#
+# Trigger is `pull_request`, deliberately NOT the privileged `*_target`
+# variant. That variant runs with write access and repository secrets in the
+# base-repo context against a head ref the author controls — the standard
+# Actions privilege-escalation route, and one this project's own template
+# verifier refuses outright. This workflow never checks out or executes pull
+# request code, so the safe trigger is sufficient.
+# =============================================================================
+name: Dependabot auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Gate on the actor: only Dependabot's own pull requests reach this job.
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7 # v2.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for minor and patch updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Leave a major for a human
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr comment "$PR_URL" --body \
+            "Major version update — not auto-merged. Adopt this deliberately: bump it by hand, one ecosystem at a time, and let CI prove it."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
