@@ -223,7 +223,16 @@ export const OnboardingStateResponseSchema = z.object({
   current_step: z.string().nullable(),
   completed_steps: z.array(z.string()),
   onboarding_completed: z.boolean(),
-  workspace_disposition: WorkspaceDispositionSchema,
+  // The gateway does not emit this field yet: `GET /v1/onboarding/state` returns only
+  // current_step / completed_steps / onboarding_completed. Requiring it here made the schema
+  // reject every real response, so the wizard's first load errored out with "We couldn't load
+  // your onboarding" for every newly registered user — the console was unusable from signup.
+  //
+  // Defaulting to "pending" is the correct reading of an absent value: `fromServerState` only
+  // branches on "skipped", and treats everything else as "no steps skipped", which is exactly
+  // the state of someone who has just signed up. When the backend starts sending the field, a
+  // real value simply overrides the default and nothing here needs to change.
+  workspace_disposition: WorkspaceDispositionSchema.default("pending"),
 });
 export type OnboardingStateResponse = z.infer<typeof OnboardingStateResponseSchema>;
 
