@@ -95,12 +95,9 @@ export default function SolutionsPage() {
         desc="Keep projects, keys, members, and prepaid model usage under the organization that owns the product. No recurring plan is required."
         bullets={[
           "Project-scoped keys keep application traffic separated.",
-          "Owners add fixed credit with QRIS, card, wallet, or direct debit.",
-          "Billing connects the payment order, invoice, and wallet grant.",
         ]}
         ctas={[
-          { label: "See prepaid pricing →", href: "/pricing", brand: true },
-          { label: "Read the API guide", href: "/docs" },
+          { label: "Read the API guide", href: "/docs", brand: true },
         ]}
         proof={<ProofCode lines={teamLines} />}
       />

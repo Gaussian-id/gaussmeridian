@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
@@ -10,24 +9,20 @@ import { Card } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCommerceCatalog } from "@/hooks/useConsoleQueries";
 import { useModels } from "@/hooks/useGaussmeridianQueries";
 
 const SKELETON_CARD_COUNT = 6;
 
-/** Configured text-chat models with customer retail rates from the versioned commerce catalog. */
+/** Configured text-chat models. Retail rates are not part of this product — billing lives elsewhere. */
 export default function ModelsPage() {
-  const { orgId } = useParams<{ orgId: string; projectId: string }>();
   const models = useModels();
-  const commerceCatalog = useCommerceCatalog(orgId);
   const [search, setSearch] = useState("");
 
+  // No rate source: retail pricing is owned by a separate product, so `buildModelCatalog`
+  // receives an empty rate list and renders the models without a retail column.
   const catalog = useMemo(
-    () =>
-      models.data
-        ? buildModelCatalog(models.data.data, commerceCatalog.data?.model_rates ?? [])
-        : [],
-    [commerceCatalog.data, models.data],
+    () => (models.data ? buildModelCatalog(models.data.data, []) : []),
+    [models.data],
   );
   const filtered = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -40,7 +35,7 @@ export default function ModelsPage() {
       <DashboardPageHeader
         eyebrow="Project"
         title="Models"
-        description="Models currently enabled for text chat in GaussMeridian. Retail rates appear only when published in the versioned billing catalog."
+        description="Models currently enabled for text chat in GaussMeridian."
       />
 
       {!models.isLoading && !models.isError && catalog.length > 0 && (

@@ -45,7 +45,6 @@
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",
-    "xendit-components-web": "0.0.27",
     "zod": "^4.4.3"
   },
   "devDependencies": {

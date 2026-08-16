@@ -27,15 +27,6 @@ export function HomeCta() {
             >
               Get API key →
             </Link>
-            <Link
-              href="/pricing"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white",
-              )}
-            >
-              See pricing
-            </Link>
           </div>
         </div>
       </ScrollReveal>
