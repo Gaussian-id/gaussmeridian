@@ -1,0 +1,113 @@
+{
+  "info": {
+    "_postman_id": "c2c6f8de-ff17-4fb9-970e-d7d718d56915",
+    "name": "GaussMeridian Live API",
+    "description": "Provider-neutral Meridian API checks. Set meridian_api_key locally after importing; the collection intentionally contains no credential.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "meridian_base_url",
+      "value": "http://127.0.0.1:8028",
+      "type": "string"
+    },
+    {
+      "key": "meridian_api_key",
+      "value": "",
+      "type": "secret"
+    },
+    {
+      "key": "meridian_expected_chat_status",
+      "value": "200",
+      "type": "string"
+    },
+    {
+      "key": "meridian_prompt",
+      "value": "Reply with exactly MERIDIAN-POSTMAN-OK",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{meridian_api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "List models",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{meridian_base_url}}/v1/models",
+          "host": ["{{meridian_base_url}}"],
+          "path": ["v1", "models"]
+        },
+        "description": "Lists the models exposed through the stable Meridian contract."
+      }
+    },
+    {
+      "name": "Create chat completion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const expected = Number(pm.variables.get('meridian_expected_chat_status'));",
+              "pm.test(`returns expected HTTP ${expected}`, function () {",
+              "  pm.response.to.have.status(expected);",
+              "});",
+              "const body = pm.response.json();",
+              "if (expected === 402) {",
+              "  pm.test('returns the structured prepaid-credit contract', function () {",
+              "    pm.expect(body.error.type).to.eql('billing_error');",
+              "    pm.expect(body.error.code).to.eql('payment_required');",
+              "  });",
+              "} else if (expected === 200) {",
+              "  pm.test('returns a settled chat completion', function () {",
+              "    pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "    pm.expect(body.choices).to.be.an('array').and.not.empty;",
+              "    pm.expect(body.usage.total_tokens).to.be.above(0);",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "postman-{{$guid}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"openai/gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{{meridian_prompt}}\"\n    }\n  ],\n  \"max_tokens\": 32\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{meridian_base_url}}/v1/chat/completions",
+          "host": ["{{meridian_base_url}}"],
+          "path": ["v1", "chat", "completions"]
+        },
+        "description": "Calls the provider-neutral Meridian chat-completions contract. Requires funded organization credit and a non-zero project budget."
+      }
+    }
+  ]
+}

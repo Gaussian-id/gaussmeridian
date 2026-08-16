@@ -1,0 +1,295 @@
+# =============================================================================
+# GaussMeridian Docker Compose
+# Clone-and-run stack: `docker compose up` brings up an OpenAI-compatible
+# gateway with zero API keys, backed by a bundled mock provider. A completion
+# against that mock currently 503s (openai model-catalog mismatch — known,
+# escalated, does not block the path below) — see README.md's "Known
+# limitation" note and docs/evidence/report.md's "Known blocker" section
+# before assuming a first `chat/completions` call should return 200. Swap in
+# a real model by setting OPENAI_BASE_URL / OPENAI_API_KEY (or GEMINI_API_KEY)
+# in .env and re-running `docker compose up -d`.
+# =============================================================================
+
+# Pin the Compose project name. Without this, Compose derives it from whatever
+# directory the repository happens to sit in, so every container, network and
+# volume is prefixed with that folder's name — `0code_gaussmeridian-network`
+# from a checkout in "0. Code", something else from the next clone. Naming it
+# here makes the stack identify itself the same way on every machine.
+name: gaussmeridian
+
+services:
+  # ---------------------------------------------------------------------------
+  # Mock Provider — OpenAI-compatible, zero keys, zero spend (quickstart default)
+  # ---------------------------------------------------------------------------
+  mock-provider:
+    build:
+      context: ./gaussmeridian
+      dockerfile: scripts/mock-provider/Dockerfile
+    image: ghcr.io/gaussian-id/gaussmeridian-mock:${TAG:-latest}
+    container_name: gaussmeridian-mock-provider
+    restart: unless-stopped
+    networks:
+      - gaussmeridian-network
+
+  # ---------------------------------------------------------------------------
+  # GaussMeridian Backend API
+  # ---------------------------------------------------------------------------
+  gaussmeridian:
+    build:
+      context: ./gaussmeridian
+      dockerfile: Dockerfile
+      target: runtime
+    image: ghcr.io/gaussian-id/gaussmeridian:${TAG:-latest}
+    container_name: gaussmeridian-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"      # HTTP API
+      - "127.0.0.1:9090:9090"      # Prometheus metrics — loopback only, not the public API surface
+    environment:
+      # Database Configuration
+      - GAUSSMERIDIAN_DB_URL=ws://surrealdb:8000
+      - GAUSSMERIDIAN_DB_NAMESPACE=${DB_NAMESPACE:-gaussmeridian}
+      - GAUSSMERIDIAN_DB_DATABASE=${DB_DATABASE:-main}
+      - GAUSSMERIDIAN_DB_USERNAME=root
+      - GAUSSMERIDIAN_DB_PASSWORD=${SURREALDB_PASSWORD:?set SURREALDB_PASSWORD in .env, see .env.example}
+
+      # Cache Configuration. The variable name is deliberately unprefixed: the server
+      # reads std::env::var("REDIS_URL") and nothing else (services/server/src/app.rs:815).
+      # GAUSSMERIDIAN_REDIS_URL is read by no code in the workspace — passing the Redis
+      # credential under that name leaves the gateway falling back to its built-in
+      # redis://localhost:6379 default, i.e. wrong host AND unauthenticated, while Redis
+      # itself demands a password. The password below is main's hardening; the variable
+      # name is the one the binary actually reads.
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env, see .env.example}@redis:6379
+
+      # Security
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env, see .env.example}
+      - GAUSSMERIDIAN_API_KEY=${GAUSSMERIDIAN_API_KEY:?set GAUSSMERIDIAN_API_KEY in .env, see .env.example}
+
+      # Provider mode is configuration, not topology. Defaults to the bundled
+      # mock (zero keys, zero spend); set OPENAI_BASE_URL + OPENAI_API_KEY in
+      # .env to route to the real OpenAI API instead. ANTHROPIC_API_KEY and
+      # GEMINI_API_KEY must still be declared (even empty) — gaussmeridian.toml
+      # enables the anthropic/google providers by default and registration
+      # fails closed at boot if their key env var is entirely unset.
+      - GAUSSMERIDIAN__PROVIDERS__OPENAI__BASE_URL=${OPENAI_BASE_URL:-http://mock-provider:8080/v1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-mock-key-not-used}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+
+      # -----------------------------------------------------------------------
+      # Meridian V2 features (all default-off = V1; these turn V2 on)
+      # -----------------------------------------------------------------------
+      # Guardrails: scan responses, block PII / prompt-injection
+      - GAUSSMERIDIAN_GUARDRAIL_PII=${GAUSSMERIDIAN_GUARDRAIL_PII:-1}
+      - GAUSSMERIDIAN_GUARDRAIL_INJECTION=${GAUSSMERIDIAN_GUARDRAIL_INJECTION:-1}
+      # Cascade routing + confidence calibration
+      - GAUSSMERIDIAN_CASCADE=${GAUSSMERIDIAN_CASCADE:-1}
+      - GAUSSMERIDIAN_CASCADE_THRESHOLD=${GAUSSMERIDIAN_CASCADE_THRESHOLD:-0.7}
+      # GaussMoA: multi-agent on complex queries. Two OpenAI agents so it works with
+      # OpenAI credits alone (Anthropic has none). Meridian heuristic gate:
+      # TAU_MOA 0.7=high-complexity only, 0.0=every request, 1.0=never. Not CARROT.
+      - GAUSSMERIDIAN_MOA=${GAUSSMERIDIAN_MOA:-1}
+      - GAUSSMERIDIAN_MOA_AGENTS=${GAUSSMERIDIAN_MOA_AGENTS:-gpt-4o-mini,gpt-4o}
+      - GAUSSMERIDIAN_MOA_TIMEOUT_SECS=${GAUSSMERIDIAN_MOA_TIMEOUT_SECS:-30}
+      - GAUSSMERIDIAN_TAU_MOA=${GAUSSMERIDIAN_TAU_MOA:-0.7}
+      # Optional: point Anthropic at a mock (no credits). Leave empty for the real API.
+      - ANTHROPIC_API_BASE=${ANTHROPIC_API_BASE:-}
+
+      # BYOK (customer provider keys). Master key = base64 32 bytes (AES-256).
+      # Left blank, compose injects a DEVELOPMENT-ONLY key so the BYOK endpoints
+      # work out of the box on a fresh clone. Generate your own before storing
+      # anything real: openssl rand -base64 32
+      - BYOK_MASTER_KEY=${BYOK_MASTER_KEY:-ZGV2LW9ubHktbm90LWZvci1wcm9kdWN0aW9uLXVzZSE=}
+      - BYOK_ADMIN_EMAILS=${BYOK_ADMIN_EMAILS:-}
+
+      # Superadmin allowlist. `require_superadmin` (services/server/src/handlers.rs) reads
+      # this env var and returns 404 — deliberately not 403 — for anyone absent from it, so
+      # an unset value makes every /v1/admin/* route indistinguishable from a route that
+      # does not exist. Left unset, a clean clone cannot exercise the admin surface at all
+      # and the evidence pack silently drops 28 cases.
+      - SUPERADMIN_EMAILS=${SUPERADMIN_EMAILS:-}
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mock-provider:
+        condition: service_healthy
+    networks:
+      - gaussmeridian-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - gaussmeridian-logs:/app/logs
+
+  # ---------------------------------------------------------------------------
+  # SurrealDB - Multi-model Database
+  # ---------------------------------------------------------------------------
+  surrealdb:
+    image: surrealdb/surrealdb:v2.0.0
+    container_name: gaussmeridian-surrealdb
+    user: root
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"      # SurrealDB Web UI — loopback only, not exposed on the network
+    command: start --log trace --user root --pass ${SURREALDB_PASSWORD:?set SURREALDB_PASSWORD in .env, see .env.example} surrealkv:/data/database.db
+    volumes:
+      - surrealdb-data:/data
+    networks:
+      - gaussmeridian-network
+    healthcheck:
+      test: ["CMD", "/surreal", "is-ready", "--endpoint", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # Redis - Caching Layer
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: gaussmeridian-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?set REDIS_PASSWORD in .env, see .env.example}
+    # `$REDIS_PASSWORD` here is expanded by the container's own shell from `environment:` above,
+    # not by docker compose — keeps the password out of the rendered compose config/`docker
+    # inspect` command line, unlike interpolating `${REDIS_PASSWORD}` directly into `command:`.
+    command: ["sh", "-c", "redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis-data:/data
+    networks:
+      - gaussmeridian-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # WebUI - Developer Dashboard (optional: docker compose --profile webui up)
+  # Composition reuses webui/docker-compose.yml's own build/env/port shape
+  # (see that file's header comment) but attaches to this stack's network and
+  # points at the `gaussmeridian` service instead of host.docker.internal.
+  # ---------------------------------------------------------------------------
+  webui:
+    profiles: ["webui"]
+    build:
+      context: ./webui
+      args:
+        # Build-time only — inlined into the browser bundle by `next build`
+        # (see webui/src/@core/lib/env.ts). Must be reachable from the host
+        # running the browser, NOT the in-network service name.
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    image: ghcr.io/gaussian-id/gaussmeridian-webui:${TAG:-latest}
+    container_name: gaussmeridian-webui
+    restart: unless-stopped
+    ports:
+      # Host-side only — container-internal stays 3000. Grafana (profiles:
+      # observability) already occupies host 3000; this project's own notes
+      # record that as the intentional prior resolution to this exact
+      # collision, so the WebUI moves instead. NEXT_PUBLIC_API_BASE_URL is
+      # unaffected — the gateway's own port (8000) did not change.
+      - "3001:3000"
+    environment:
+      # Runtime-only override read server-side (apiBaseUrl() in
+      # webui/src/@core/lib/env.ts) by the /api/gaussmeridian proxy and the
+      # auth Route Handlers. Must be the in-network service name — the
+      # container, not the browser, resolves this one.
+      - GAUSSMERIDIAN_API_URL=http://gaussmeridian:8000
+    depends_on:
+      gaussmeridian:
+        condition: service_healthy
+    networks:
+      - gaussmeridian-network
+    healthcheck:
+      # node:24-alpine ships busybox wget, not curl. Use 127.0.0.1, not
+      # localhost — busybox wget resolves localhost to ::1 first and the
+      # Next.js server here isn't listening on the IPv6 loopback, so a
+      # localhost probe connection-refuses even though the server is up
+      # (same class of issue documented in webui/.env.example).
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # Prometheus - Metrics Collection (optional: docker compose --profile observability up)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: gaussmeridian-prometheus
+    restart: unless-stopped
+    profiles: ["observability"]
+    ports:
+      - "127.0.0.1:9091:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - gaussmeridian-network
+    depends_on:
+      - gaussmeridian
+      # prometheus can scrape independently; gaussmeridian dep removed to avoid circular failures
+
+  # ---------------------------------------------------------------------------
+  # Grafana - Dashboards & Visualization (optional: docker compose --profile observability up)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: gaussmeridian-grafana
+    restart: unless-stopped
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD in .env, see .env.example}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - gaussmeridian-network
+    depends_on:
+      - prometheus
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  gaussmeridian-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  surrealdb-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  gaussmeridian-logs:
+    driver: local

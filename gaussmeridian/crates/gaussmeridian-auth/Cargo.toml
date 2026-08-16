@@ -1,0 +1,45 @@
+# Public distribution manifest. Identical to Cargo.toml except that the optional
+# gaussmeridian-db integration is absent: the database crate is not part of this
+# distribution, so the dependency and the feature that enables it are removed rather
+# than left pointing at a directory that does not exist.
+[package]
+name = "gaussmeridian-auth"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Authentication and authorization for GaussMeridian"
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+base64 = { workspace = true }
+secrecy = { workspace = true }
+aes-gcm = { workspace = true }
+jsonwebtoken = "9.2"
+reqwest = { workspace = true }
+url = "2.5"
+async-trait = { workspace = true }
+rand = { workspace = true }
+bcrypt = "0.15"
+# DR-010 (ratified 2026-07-16) — Argon2id is the mandated password-hashing algorithm.
+# `hash_password` now hashes new passwords with Argon2id; `verify_password` still accepts
+# legacy bcrypt/SHA-256 rows and `login_user` rehashes them to Argon2id on successful login.
+# Version pinned to match `gaussmeridian-utils` and `gaussmeridian-moa`'s existing `argon2 = "0.5"`.
+argon2 = "0.5"
+dashmap = { workspace = true }
+redis = { workspace = true }
+deadpool-redis = { workspace = true }
+
+[features]
+default = []

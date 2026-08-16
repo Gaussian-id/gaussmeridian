@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Class-based dark mode (light is the default). Toggled by next-themes on <html>. */
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Gaussian brand utilities — depth without darkness */
+@layer utilities {
+  /* Deep-blue gradient feature surface (hero panels, CTAs) */
+  .bg-brand-gradient {
+    background-image: var(--brand-gradient);
+  }
+
+  /* "Live / verified" glow on active elements */
+  .shadow-glow {
+    box-shadow: var(--glow);
+  }
+
+  /* Faint instrument-panel grid texture */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  /* Glassmorphic panel */
+  .glass {
+    background-color: color-mix(in srgb, var(--card) 70%, transparent);
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+
+  /* Radial brand glow for hero atmosphere */
+  .bg-radial-glow {
+    background: radial-gradient(
+      60% 50% at 50% 0%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 70%
+    );
+  }
+
+  /* Instrument grid that fades toward the edges */
+  .bg-grid-fade {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 35%, transparent 80%);
+    mask-image: radial-gradient(120% 90% at 50% 0%, #000 35%, transparent 80%);
+  }
+
+  /* Brand-gradient clipped text */
+  .text-gradient {
+    background-image: linear-gradient(
+      120deg,
+      var(--gauss-700),
+      var(--gauss-500) 55%,
+      var(--gauss-400)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* Pipeline scrollytelling — the sticky meridian rail + scroll-lit nodes (see PipelineScrollytelling) */
+@layer components {
+  .pl-rail-track {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--color-border);
+  }
+  .pl-fill {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    width: 2px;
+    height: 100%;
+    border-radius: 2px;
+    transform: scaleY(0);
+    transform-origin: top;
+    background: linear-gradient(var(--gauss-500), var(--gauss-400));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  .pl-pulse {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    transform: translate(-5px, -50%);
+    background: #fff;
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent),
+      0 0 16px 3px color-mix(in srgb, var(--accent) 80%, transparent);
+  }
+  .pl-bullet {
+    margin-left: 14px;
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 9999px;
+    border: 2px solid var(--color-border);
+    background: var(--color-background);
+    transition: 0.3s;
+  }
+  .pl-node.pl-lit .pl-bullet {
+    border-color: var(--gauss-400);
+    background: var(--gauss-500);
+    box-shadow: 0 0 12px 2px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  .pl-label {
+    color: var(--muted-foreground);
+    transition: color 0.3s;
+  }
+  .pl-node.pl-lit .pl-label {
+    color: var(--foreground);
+  }
+  .pl-body {
+    transition: opacity 0.4s;
+  }
+  @media (min-width: 821px) {
+    .pl-body {
+      opacity: 0.4;
+    }
+    .pl-card.pl-active .pl-body {
+      opacity: 1;
+    }
+  }
+}
+
+/* Sheet (ui/sheet.tsx) — slide-in drawer motion. Plain `@keyframes`, not a transition: Radix's
+   Presence (which keeps the exit-state DOM node mounted until motion finishes) detects an
+   in-progress close by reading `animationName` off computed style, so the exit rule must be a
+   CSS animation, not a transition. Reduced-motion sets `animation: none` on every rule below,
+   which makes Presence's computed `animationName` "none" and unmount immediately — no delay,
+   no residual motion, matching the no-op contract the rest of `components/motion/*` follows. */
+@layer components {
+  .sheet-overlay {
+    animation: sheet-overlay-in 200ms ease-out;
+  }
+  .sheet-overlay[data-state="closed"] {
+    animation: sheet-overlay-out 200ms ease-in;
+  }
+  .sheet-content {
+    animation: sheet-slide-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sheet-content[data-state="closed"] {
+    animation: sheet-slide-out 200ms ease-in;
+  }
+
+  @keyframes sheet-overlay-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes sheet-overlay-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-slide-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes sheet-slide-out {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-overlay,
+    .sheet-overlay[data-state="closed"],
+    .sheet-content,
+    .sheet-content[data-state="closed"] {
+      animation: none;
+    }
+  }
+}

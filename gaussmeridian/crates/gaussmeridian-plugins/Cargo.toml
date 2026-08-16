@@ -1,0 +1,28 @@
+[package]
+name = "gaussmeridian-plugins"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Plugin system for GaussMeridian"
+
+[dependencies]
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+dynamic_reload = { workspace = true, optional = true }
+libloading = { workspace = true, optional = true }
+
+gaussmeridian-models = { path = "../gaussmeridian-models" }
+
+[features]
+default = []
+dynamic = ["dep:dynamic_reload", "dep:libloading"] 

@@ -1,0 +1,36 @@
+# Public distribution manifest. Identical to Cargo.toml except that the optional
+# gaussmeridian-db integration is absent: the database crate is not part of this
+# distribution, so the dependency and the feature that enables it are removed rather
+# than left pointing at a directory that does not exist.
+[package]
+name = "gaussmeridian-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <you@example.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your/repo"
+keywords = ["ai", "router", "core"]
+categories = ["ai", "routing"]
+description = "Core router logic for GaussMeridian"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+thiserror = "1"
+chrono = "0.4"
+dashmap = "5"
+uuid = { version = "1", features = ["v4"] }
+futures = "0.3"
+gaussmeridian-models = { path = "../gaussmeridian-models" }
+gaussmeridian-cache = { path = "../gaussmeridian-cache" }
+gaussmeridian-metrics = { path = "../gaussmeridian-metrics" }
+gaussmeridian-auth = { path = "../gaussmeridian-auth" }
+reqwest = { workspace = true }
+sha2 = { workspace = true }
+
+[features]
+default = []
+full = []

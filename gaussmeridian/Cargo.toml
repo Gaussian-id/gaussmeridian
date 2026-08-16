@@ -1,0 +1,148 @@
+[workspace]
+resolver = "2"
+# Public workspace for the GaussMeridian open-source distribution. The gateway server and its
+# configuration/persistence crates are published separately once their staged extraction completes;
+# they are intentionally absent here rather than stubbed. Crates that optionally integrate with the
+# database build with that feature disabled.
+members = [
+    "crates/gaussmeridian-core",
+    "crates/gaussmeridian-providers",
+    "crates/gaussmeridian-models",
+    "crates/gaussmeridian-cache",
+    "crates/gaussmeridian-auth",
+    "crates/gaussmeridian-metrics",
+    "crates/gaussmeridian-plugins",
+    "crates/gaussmeridian-utils",
+    "crates/gaussmeridian-moa",
+    "services/tui",
+]
+
+[workspace.package]
+version = "3.0.0"
+edition = "2021"
+authors = ["GaussMeridian Contributors"]
+license = "Apache-2.0"
+repository = "https://github.com/gaussmeridian/gaussmeridian"
+keywords = ["llm", "router", "ai", "openai", "compatible", "multi-agent"]
+categories = ["api-bindings", "asynchronous", "web-programming"]
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-util = "0.7"
+tokio-stream = "0.1"
+
+# HTTP framework
+axum = { version = "0.7", features = ["json", "ws", "macros"] }
+tower = { version = "0.4", features = ["timeout", "load-shed", "limit"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip", "limit"] }
+hyper = { version = "1.0", features = ["full"] }
+
+# Serialization & Data Handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["float_roundtrip", "raw_value"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# HTTP Client
+reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"] }
+reqwest-eventsource = "0.4"
+
+# Async & Streaming
+futures = "0.3"
+async-stream = "0.3"
+pin-project = "1.1"
+
+# Configuration & Environment
+config = "0.13"
+dotenvy = "0.15"
+clap = { version = "4.4", features = ["derive"] }
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+# Performance & Concurrency
+dashmap = "5.5"
+parking_lot = "0.12"
+crossbeam = "0.8"
+rayon = "1.8"
+
+# Caching
+moka = { version = "0.12", features = ["future"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+deadpool-redis = { version = "0.14" }
+
+# Database
+surrealdb = { version = "2.0", features = ["kv-mem", "protocol-ws", "protocol-http"] }
+
+# Security
+sha1 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.21"
+ring = "0.17"
+url = "2.5"
+secrecy = "0.8"
+jsonwebtoken = "9.2"
+aes-gcm = "0.10"
+
+# Metrics & Observability
+prometheus = { version = "0.13" }
+metrics = "0.22"
+metrics-exporter-prometheus = { version = "0.13" }
+
+# WebSocket Support
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"] }
+
+# Error Handling
+thiserror = "1.0"
+anyhow = "1.0"
+color-eyre = "0.6"
+
+# Plugin System
+dynamic_reload = { version = "0.1" }
+libloading = { version = "0.8" }
+
+# TUI Framework
+ratatui = "0.26"
+crossterm = "0.27"
+
+# Testing
+tokio-test = "0.4"
+mockall = "0.12"
+wiremock = "0.5"
+
+# Additional dependencies
+rand = "0.8"
+hex = "0.4"
+x509-parser = "0.15"
+tempfile = "3.8"
+cap-std = "4.0.2"
+cap-fs-ext = "4.0.2"
+async-trait = "0.1"
+flate2 = "1.1"
+pep508_rs = "0.9.2"
+toml = "0.8"
+tar = "0.4.46"
+
+[workspace.metadata]
+name = "gaussmeridian"
+description = "High-performance Rust-based LLM router compatible with OpenAI API"
+homepage = "https://gaussmeridian.com"
+documentation = "https://docs.gaussmeridian.com"
+readme = "README.md"
+
+# Keep local development fast without producing multi-gigabyte debug-symbol artifacts.
+# Workspace-root profiles are honored even when Cargo is invoked through --manifest-path
+# from the repository parent; gaussmeridian/.cargo/config.toml is not discovered there.
+[profile.dev]
+codegen-units = 4
+debug = 0
+incremental = false
+
+[profile.test]
+codegen-units = 4
+debug = 0
+incremental = false

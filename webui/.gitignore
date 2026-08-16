@@ -1,0 +1,56 @@
+# Public distribution variant of webui/.gitignore.
+# Identical to the private file except that the local workspace-junction guards are
+# omitted: those directories only exist in the internal checkout, so the rules are
+# inert here and would only name internal tooling.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/docs/dogfood-output/
+/playwright/.cache/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+# ...but keep the committed template
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+
+# agent scratch artifacts — never committed
+/.superpowers
+
+# Rename-connectivity Playwright artifacts
+.playwright-rename/

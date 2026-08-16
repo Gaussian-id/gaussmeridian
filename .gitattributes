@@ -1,0 +1,2 @@
+# Routing evidence hashes source and fixture bytes. Keep text deterministic across OSes.
+* text=auto eol=lf

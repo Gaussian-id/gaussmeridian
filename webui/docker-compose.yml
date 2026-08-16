@@ -1,0 +1,32 @@
+# GaussMeridian WebUI — containerized run (no public hosting).
+#
+# Standalone (backend running on the host):
+#   docker compose up --build
+#   → WebUI on http://localhost:3000, proxying to the host gaussmeridian on :8000.
+#
+# Composed with the full router stack: start the gaussmeridian repo's compose first
+# (gaussmeridian + surrealdb + redis share its default network), then point
+# NEXT_PUBLIC_API_BASE_URL at the gaussmeridian service instead and attach this
+# service to that network.
+
+# Pinned so this standalone run identifies itself consistently instead of
+# inheriting whatever directory the checkout happens to live in.
+name: gaussmeridian-webui
+
+services:
+  webui:
+    build:
+      context: .
+    image: gauss-meridian-webui
+    ports:
+      - "3000:3000"
+    environment:
+      # Runtime-only override read server-side by the /api/gaussmeridian proxy and the
+      # auth Route Handlers (NEXT_PUBLIC_* is inlined at build time and can't be
+      # overridden in a built image — see apiBaseUrl() in src/@core/lib/env.ts).
+      GAUSSMERIDIAN_API_URL: ${GAUSSMERIDIAN_API_URL:-http://host.docker.internal:8000}
+    extra_hosts:
+      # Docker Desktop provides host.docker.internal natively; this line makes the
+      # same name work on Linux engines too.
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

@@ -1,0 +1,192 @@
+name: gaussmeridian-native-preview
+
+services:
+  surrealdb:
+    build:
+      context: ./gaussmeridian
+      dockerfile: scripts/fixtures/native-preview-surrealdb.Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    image: gaussmeridian-native-preview-surrealdb:${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    container_name: gaussmeridian-native-surrealdb
+    restart: "no"
+    environment:
+      SURREAL_USER: ${NATIVE_PREVIEW_DB_USERNAME:-root}
+      SURREAL_PASS: ${NATIVE_PREVIEW_DB_PASSWORD:?set an ephemeral Native preview database password}
+    ports:
+      - "127.0.0.1:8002:8000"
+    volumes:
+      - surrealdb-data:/data
+    networks:
+      - native-preview
+    healthcheck:
+      test: ["CMD", "/busybox", "wget", "-qO-", "http://127.0.0.1:8000/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+    labels:
+      org.gaussmeridian.source: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+      org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+
+  redis:
+    image: redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    container_name: gaussmeridian-native-redis
+    restart: "no"
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - native-preview
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    labels:
+      org.gaussmeridian.source: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+      org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+
+  provider:
+    build:
+      context: ./gaussmeridian
+      dockerfile: scripts/fixtures/native-preview-provider.Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    image: gaussmeridian-native-preview-provider:${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    container_name: gaussmeridian-native-provider-simulator
+    restart: "no"
+    environment:
+      NATIVE_PREVIEW_PROVIDER_CAPTURE_PATH: /evidence/provider-wire.jsonl
+      NATIVE_PREVIEW_PROVIDER_TIMEOUT_SECONDS: "3"
+    ports:
+      - "127.0.0.1:18082:8080"
+    volumes:
+      - provider-evidence:/evidence
+    networks:
+      - native-preview
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=1).read()",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 2s
+    labels:
+      org.gaussmeridian.source: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+      org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+
+  api:
+    build:
+      context: ./gaussmeridian
+      dockerfile: Dockerfile
+      target: runtime
+      labels:
+        org.gaussmeridian.source: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+        org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    image: gaussmeridian-native-preview-api:${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+    container_name: gaussmeridian-api
+    restart: "no"
+    depends_on:
+      provider:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      surrealdb:
+        condition: service_healthy
+    configs:
+      - source: api-config
+        target: /app/gaussmeridian.toml
+        mode: 0444
+    environment:
+      GAUSSMERIDIAN_DB_URL: ws://gaussmeridian-native-surrealdb:8000
+      GAUSSMERIDIAN_DB_NAMESPACE: native_preview
+      GAUSSMERIDIAN_DB_DATABASE: main
+      GAUSSMERIDIAN_DB_USERNAME: ${NATIVE_PREVIEW_DB_USERNAME:-root}
+      GAUSSMERIDIAN_DB_PASSWORD: ${NATIVE_PREVIEW_DB_PASSWORD:?set an ephemeral Native preview database password}
+      GAUSSMERIDIAN_DB_AUTO_START: "false"
+      GAUSSMERIDIAN_HOST: 0.0.0.0
+      GAUSSMERIDIAN_PORT: "8000"
+      GAUSSMERIDIAN__SERVER__REQUEST_TIMEOUT: "10"
+      REDIS_URL: redis://gaussmeridian-native-redis:6379
+      GAUSSMERIDIAN__CACHE__REDIS_URL: redis://gaussmeridian-native-redis:6379
+      JWT_SECRET: ${NATIVE_PREVIEW_JWT_SECRET:?set an ephemeral Native preview JWT secret}
+      OPENAI_API_KEY: ${NATIVE_PREVIEW_PROVIDER_TOKEN:?set an ephemeral Native preview fixture token}
+      RUST_LOG: info
+      RUST_BACKTRACE: "1"
+      GAUSSMERIDIAN_MOA: "0"
+    ports:
+      - "127.0.0.1:8020:8000"
+    volumes:
+      - api-logs:/app/logs
+    networks:
+      - native-preview
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/health"]
+      interval: 3s
+      timeout: 2s
+      retries: 60
+      start_period: 10s
+    labels:
+      org.gaussmeridian.source: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+      org.opencontainers.image.revision: ${NATIVE_PREVIEW_SOURCE_COMMIT:?set NATIVE_PREVIEW_SOURCE_COMMIT to the native Git commit}
+
+configs:
+  api-config:
+    content: |
+      [providers.openai]
+      provider_type = "openai"
+      enabled = true
+      base_url = "http://gaussmeridian-native-provider-simulator:8080/v1"
+      api_key = "$${OPENAI_API_KEY}"
+      timeout = 2
+      max_retries = 1
+      models = ["gpt-4o-mini", "gpt-4o"]
+
+      [providers.anthropic]
+      provider_type = "anthropic"
+      enabled = false
+      models = []
+
+      [providers.google]
+      provider_type = "google"
+      enabled = false
+      models = []
+
+      [providers.ollama]
+      provider_type = "ollama"
+      enabled = false
+      models = []
+
+      [cache]
+      cache_type = "redis"
+      redis_url = "redis://gaussmeridian-native-redis:6379"
+      max_size = 1000
+      ttl = 3600
+      enabled = true
+
+      [security]
+      enable_https = false
+      jwt_secret = "$${JWT_SECRET}"
+
+      [deployment]
+      environment = "development"
+
+networks:
+  native-preview:
+    name: gaussmeridian-native-preview
+
+volumes:
+  api-logs:
+    name: gaussmeridian-native-preview-api-logs
+  provider-evidence:
+    name: gaussmeridian-native-preview-provider-evidence
+  redis-data:
+    name: gaussmeridian-native-preview-redis-data
+  surrealdb-data:
+    name: gaussmeridian-native-preview-surrealdb-data-v2

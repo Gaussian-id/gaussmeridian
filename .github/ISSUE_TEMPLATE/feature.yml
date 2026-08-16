@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a bounded improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or operator problem needs solving?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe success without prescribing implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Compatibility and operating impact
+      description: Cover APIs, configuration, persistence, security, deployment, and maintenance.
+    validations:
+      required: true

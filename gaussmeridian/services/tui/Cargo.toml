@@ -1,0 +1,43 @@
+[package]
+name = "gaussmeridian-tui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["ai", "router", "tui", "terminal", "management"]
+categories = ["ai", "routing", "command-line-utilities"]
+description = "Terminal user interface for GaussMeridian management"
+
+[[bin]]
+name = "gaussmeridian-tui"
+path = "src/main.rs"
+
+[dependencies]
+# Workspace dependencies
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+
+# TUI framework
+ratatui.workspace = true
+crossterm.workspace = true
+
+# HTTP client for API communication
+reqwest.workspace = true
+
+# Internal crates
+gaussmeridian-core = { path = "../../crates/gaussmeridian-core" }
+gaussmeridian-models = { path = "../../crates/gaussmeridian-models" }
+gaussmeridian-metrics = { path = "../../crates/gaussmeridian-metrics" }
+
+[features]
+default = []
+

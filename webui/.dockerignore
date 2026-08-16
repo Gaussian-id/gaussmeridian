@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.superpowers
+docs
+*.md
+!README.md
+.env*
+tsconfig.tsbuildinfo
+Dockerfile
+docker-compose.yml
+docs/dogfood-output
+evidence
+playwright-report
+test-results
+bash.exe.stackdump

@@ -1,0 +1,32 @@
+[package]
+name = "gaussmeridian-utils"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Shared utilities for GaussMeridian"
+
+[dependencies]
+tokio = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+tempfile = { workspace = true }
+tokio-stream = { workspace = true }
+async-stream = { workspace = true }
+pin-project = { workspace = true }
+url = "2.5"
+sha2 = "0.10"
+# PRD-21 Wave B / DR-010 D4 — Argon2id password hashing for `project.access_secret` (the
+# "project password"). Version pinned to match `crates/gaussmeridian-moa/Cargo.toml`'s existing
+# `argon2 = "0.5"` dependency (same crate, same major version, kept in sync intentionally).
+argon2 = "0.5" 

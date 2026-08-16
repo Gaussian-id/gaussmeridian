@@ -1,0 +1,14 @@
+# Grafana Dashboard Provisioning for GaussMeridian
+apiVersion: 1
+
+providers:
+  - name: 'GaussMeridian'
+    orgId: 1
+    folder: 'GaussMeridian'
+    folderUid: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

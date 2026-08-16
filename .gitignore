@@ -1,0 +1,48 @@
+**/node_modules/
+**/target/
+**/dist/
+**/build/
+**/out/
+**/cache/
+!gaussmeridian/crates/gaussmeridian-moa/src/cache/
+!gaussmeridian/crates/gaussmeridian-moa/src/cache/mod.rs
+**/logs/
+**/tmp/
+**/temp/
+**/var/
+**/var/log/
+**/var/log/gaussmeridian/
+
+# Operating-system metadata
+.DS_Store
+
+# Python bytecode
+**/__pycache__/
+**/*.py[cod]
+
+# Next.js
+**/.next/
+**/*.tsbuildinfo
+
+# Environment variables
+**/.env
+**/.env.local
+**/.env.*.local
+
+# SurrealDB local database files
+gaussmeridian.db/
+*.db
+*.db-lock
+
+# MCP
+.mcp.json
+
+# Crash dumps (Cygwin / Git-bash)
+*.stackdump
+
+# Local dev stack (scripts/dev-stack.ps1 runtime: PIDs + logs)
+.runtime/
+
+# Local Docker Compose override — auto-merged into every `docker compose up`;
+# contains developer-specific values (see docker-compose.override.yml.example).
+docker-compose.override.yml

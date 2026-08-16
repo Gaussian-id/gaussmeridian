@@ -1,0 +1,46 @@
+[package]
+name = "gaussmeridian-providers"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "LLM provider implementations for GaussMeridian"
+
+[dependencies]
+tokio = { workspace = true }
+reqwest = { workspace = true }
+reqwest-eventsource = { workspace = true }
+futures = { workspace = true }
+async-stream = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+
+gaussmeridian-core = { path = "../gaussmeridian-core" }
+gaussmeridian-models = { path = "../gaussmeridian-models" }
+regex = "1.10"
+lazy_static = "1.4"
+bytes = "1.5"
+
+[features]
+default = ["anthropic", "openai", "ollama", "gemini"]
+openai = []
+ollama = []
+huggingface = []
+lmstudio = []
+vllm = []
+anthropic = []
+gemini = []
+cohere = []
+custom = []
+all = ["openai", "ollama", "huggingface", "lmstudio", "vllm", "anthropic", "gemini", "cohere", "custom"]
+[dev-dependencies]
+# live_model_validation.rs loads the same .env the server uses
+dotenvy = { workspace = true }
