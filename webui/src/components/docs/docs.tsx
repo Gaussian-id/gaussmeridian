@@ -4,6 +4,18 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@core/lib/utils";
 
+import {
+  ENDPOINT_GROUPS,
+  ENV_ACCESS,
+  ENV_CORE,
+  ENV_INFRA,
+  ENV_PROVIDERS,
+  ENV_ROUTING,
+  ERROR_ROWS,
+  HEADER_FAMILIES,
+} from "./docs-data";
+
+import type { EnvVar } from "./docs-data";
 import type { ReactNode } from "react";
 
 const nav: { group: string; items: [string, string][] }[] = [
@@ -11,119 +23,40 @@ const nav: { group: string; items: [string, string][] }[] = [
     group: "Start here",
     items: [
       ["overview", "What it is"],
-      ["quickstart", "Run it locally"],
-      ["first-request", "Your first request"],
+      ["install", "Install"],
+      ["first-request", "First request"],
+      ["sdks", "Use your SDK"],
     ],
   },
   {
-    group: "Core concepts",
+    group: "Concepts",
     items: [
-      ["concepts", "Orgs, projects, keys"],
+      ["tenancy", "Orgs and projects"],
       ["auth", "Authentication"],
+      ["keys", "API keys"],
       ["byok", "Bring your own key"],
+      ["routing", "How routing works"],
     ],
   },
   {
-    group: "API reference",
+    group: "API",
     items: [
-      ["chat", "Chat completions"],
-      ["models", "Models"],
+      ["endpoints", "Endpoint reference"],
+      ["completions", "Chat completions"],
+      ["streaming", "Streaming"],
       ["headers", "Response headers"],
       ["errors", "Errors"],
     ],
   },
   {
-    group: "Operating it",
+    group: "Operating",
     items: [
       ["configuration", "Configuration"],
-      ["routing", "Routing features"],
       ["services", "Services and ports"],
+      ["production", "Going to production"],
       ["troubleshooting", "Troubleshooting"],
     ],
   },
-];
-
-const headerRows: [string, ReactNode][] = [
-  ["x-gaussmeridian-model-selected", <>The model that actually served the request.</>],
-  ["x-gaussmeridian-provider-selected", <>The provider it was served from.</>],
-  ["x-gaussmeridian-complexity", <>Estimated prompt complexity, 0–1. Drives cascade and MoA.</>],
-  ["x-gaussmeridian-candidates", <>The models considered, with their scores.</>],
-  ["x-gaussmeridian-score", <>Score of the selected candidate.</>],
-  ["x-gaussmeridian-tier", <>Capability tier the request was routed into.</>],
-  ["x-gaussmeridian-cost", <>Cost attributed to this request.</>],
-  ["x-gaussmeridian-budget-used", <>Project budget consumed so far.</>],
-  ["x-gaussmeridian-budget-limit", <>The project's configured monthly budget.</>],
-  ["x-gaussmeridian-cache-hit", <>Whether the response came from cache.</>],
-  ["x-gaussmeridian-cache-tier", <>Which cache tier answered.</>],
-  ["x-gaussmeridian-guardrail", <>Set when a guardrail acted on the response.</>],
-  ["x-gaussmeridian-retry-count", <>Provider retries before a response was returned.</>],
-  ["x-gaussmeridian-r-binary", <>Outcome flag used by the billing ledger.</>],
-];
-
-const envRows: [string, string, ReactNode][] = [
-  ["JWT_SECRET", "required", <>Signs console session tokens. Any sufficiently long random string.</>],
-  [
-    "GAUSSMERIDIAN_API_KEY",
-    "required",
-    <>Bootstrap API key baked in at startup, for calling the gateway before you create one.</>,
-  ],
-  ["SURREALDB_PASSWORD", "required", <>Root password for the bundled SurrealDB.</>],
-  [
-    "REDIS_PASSWORD",
-    "required",
-    <>Redis auth. Compose builds the gateway&apos;s connection string from it.</>,
-  ],
-  ["GRAFANA_PASSWORD", "required", <>Admin password for Grafana, under the observability profile.</>],
-  [
-    "GEMINI_API_KEY",
-    "optional",
-    <>Google provider credential. Also OPENAI_API_KEY and ANTHROPIC_API_KEY.</>,
-  ],
-  [
-    "BYOK_MASTER_KEY",
-    "optional",
-    <>
-      Base64 of 32 random bytes; encrypts stored provider keys. Compose injects a development-only
-      default so BYOK works on a fresh clone — generate your own before storing anything real.
-    </>,
-  ],
-  [
-    "BYOK_ADMIN_EMAILS",
-    "optional",
-    <>Comma-separated emails allowed to register or delete BYOK keys. Empty means nobody can.</>,
-  ],
-  [
-    "SUPERADMIN_EMAILS",
-    "optional",
-    <>
-      Comma-separated emails with access to <code>/v1/admin/*</code>. Absent callers get 404, not
-      403, so the admin surface is indistinguishable from routes that do not exist.
-    </>,
-  ],
-];
-
-const errorRows: [string, string, ReactNode][] = [
-  [
-    "401",
-    "unauthorized",
-    <>
-      No credential, or one the gateway does not recognise. Check you used{" "}
-      <code>x-api-key</code> and not <code>Authorization</code>.
-    </>,
-  ],
-  [
-    "400",
-    "project_scope_required",
-    <>The API key is not attached to a project. Recreate it from a project&apos;s Keys page.</>,
-  ],
-  [
-    "402",
-    "budget_exceeded",
-    <>The project has no budget, or has spent it. Set a monthly budget in project settings.</>,
-  ],
-  ["403", "project_access_denied", <>The caller is not a member of that project&apos;s org.</>],
-  ["404", "—", <>On <code>/v1/admin/*</code> this can mean &ldquo;not a superadmin&rdquo;.</>],
-  ["429", "rate_limited", <>The key&apos;s per-minute or per-day limit was hit.</>],
 ];
 
 function DocSection({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -135,11 +68,18 @@ function DocSection({ id, title, children }: { id: string; title: string; childr
   );
 }
 
-function DocCode({ children }: { children: ReactNode }) {
+function DocCode({ children, label }: { children: ReactNode; label?: string }) {
   return (
-    <pre className="border-border bg-muted/40 my-3.5 overflow-x-auto rounded-[12px] border p-4 font-mono text-[13px] leading-[1.75]">
-      <code>{children}</code>
-    </pre>
+    <div className="my-3.5">
+      {label ? (
+        <div className="text-muted-foreground mb-1 font-mono text-[10.5px] tracking-[0.14em] uppercase">
+          {label}
+        </div>
+      ) : null}
+      <pre className="border-border bg-muted/40 overflow-x-auto rounded-[12px] border p-4 font-mono text-[13px] leading-[1.75]">
+        <code>{children}</code>
+      </pre>
+    </div>
   );
 }
 
@@ -180,13 +120,59 @@ function Table({ head, children }: { head: string[]; children: ReactNode }) {
   );
 }
 
+const AUTH_LABEL: Record<string, string> = {
+  key: "API key",
+  session: "Session",
+  admin: "Admin",
+  none: "Public",
+};
+
+function AuthPill({ kind }: { kind: string }) {
+  return (
+    <span
+      className={cn(
+        "rounded px-1.5 py-0.5 font-mono text-[10px] whitespace-nowrap",
+        kind === "none" && "bg-muted text-muted-foreground",
+        kind === "key" && "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-primary",
+        kind === "session" && "bg-muted text-foreground",
+        kind === "admin" &&
+          "bg-[color-mix(in_srgb,var(--gauss-500)_14%,transparent)] text-[var(--gauss-600)]",
+      )}
+    >
+      {AUTH_LABEL[kind]}
+    </span>
+  );
+}
+
 const p = "text-foreground mt-2.5 text-[15.5px] leading-relaxed";
 const pm = "text-muted-foreground mt-2.5 text-[15px] leading-relaxed";
 const h3 = "text-foreground mt-7 mb-1 text-[15.5px] font-semibold";
 const ic =
   "text-primary rounded-md bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-1.5 py-0.5 font-mono text-[0.9em]";
 const td = "border-border border-b px-3 py-2 align-top";
-const tdMono = cn(td, "font-mono text-[12.5px] whitespace-nowrap");
+const tdMono = cn(td, "font-mono text-[12.5px]");
+
+function EnvTable({ rows }: { rows: EnvVar[] }) {
+  return (
+    <Table head={["Variable", "Default", "Purpose"]}>
+      {rows.map((r) => (
+        <tr key={r.name}>
+          <td className={cn(tdMono, "whitespace-nowrap")}>
+            {r.name}
+            {r.required ? (
+              <span className="text-[var(--gauss-600)]" title="required">
+                {" "}
+                *
+              </span>
+            ) : null}
+          </td>
+          <td className={cn(tdMono, "text-muted-foreground")}>{r.def ?? (r.required ? "—" : "off")}</td>
+          <td className={td}>{r.purpose}</td>
+        </tr>
+      ))}
+    </Table>
+  );
+}
 
 /** Reference documentation: sticky sidebar, scrollspy, no background animation. */
 export function Docs() {
@@ -212,7 +198,7 @@ export function Docs() {
     );
 
   return (
-    <div className="mx-auto grid max-w-[84rem] grid-cols-1 gap-11 px-6 pt-24 pb-24 lg:grid-cols-[230px_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-[86rem] grid-cols-1 gap-11 px-6 pt-24 pb-24 lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="top-24 hidden self-start text-sm lg:sticky lg:block">
         {nav.map((g) => (
           <div key={g.group} className="mb-5">
@@ -236,39 +222,48 @@ export function Docs() {
           <h1 className="font-display mt-3 text-4xl font-semibold tracking-tight sm:text-[44px]">
             Run it, call it, ship it.
           </h1>
-          <p className={cn(pm, "max-w-[52ch]")}>
-            Everything needed to stand GaussMeridian up on your own machine, issue a key, and make a
-            real completion — plus the configuration and failure modes you will meet on the way.
+          <p className={cn(pm, "max-w-[54ch]")}>
+            Everything needed to stand GaussMeridian up, issue a key, and make a real completion —
+            with the configuration, the full endpoint surface, and the failure modes you will
+            actually meet.
           </p>
         </div>
 
+        {/* ------------------------------------------------------------ */}
         <DocSection id="overview" title="What it is">
           <p className={p}>
-            GaussMeridian is a self-hosted gateway that speaks the OpenAI API. You point an existing
-            SDK at it instead of a provider, and it routes each request to a model behind the
-            scenes, applies your guardrails and budgets, and records what happened.
+            GaussMeridian is a self-hosted gateway that speaks the OpenAI API. Point an existing SDK
+            at it instead of a provider, and it chooses a model per request, enforces your budgets
+            and guardrails, and records what happened in enough detail to reconstruct the decision
+            later.
           </p>
-          <p className={pm}>Concretely, it gives you:</p>
+          <p className={pm}>The parts you interact with:</p>
           <ul className={cn(pm, "mt-2 list-disc space-y-1 pl-5")}>
             <li>
-              One OpenAI-compatible endpoint in front of OpenAI, Anthropic, and Google models.
+              <strong>Gateway</strong> — one OpenAI-compatible endpoint in front of OpenAI,
+              Anthropic, Google, and local Ollama models.
             </li>
-            <li>Per-project API keys, budgets, and rate limits.</li>
             <li>
-              Customer-supplied provider credentials (BYOK), encrypted before they are stored.
+              <strong>Console</strong> — a web UI for orgs, projects, keys, and routing traces.
             </li>
-            <li>A web console for people, and the same REST API for machines.</li>
-            <li>Response headers that tell you exactly what routed, what it cost, and why.</li>
+            <li>
+              <strong>Router</strong> — scores candidate models per request against cost, quality
+              floor, and capability band.
+            </li>
+            <li>
+              <strong>Ledger</strong> — per-project budgets and per-request cost attribution.
+            </li>
           </ul>
           <Callout>
-            Everything runs on your infrastructure. There is no hosted GaussMeridian to sign up for —
-            the quickstart below is the product.
+            Everything runs on your infrastructure. There is no hosted service to sign up for — the
+            install below is the product.
           </Callout>
         </DocSection>
 
-        <DocSection id="quickstart" title="Run it locally">
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="install" title="Install">
           <p className={pm}>
-            You need Docker with Compose. Nothing else — the database, cache, and a mock model
+            Docker with Compose is the only prerequisite. The database, cache, and a mock model
             provider all come up with the stack.
           </p>
 
@@ -277,342 +272,674 @@ export function Docs() {
 cd gaussmeridian
 cp .env.example .env`}</DocCode>
           <p className={pm}>
-            <code className={ic}>.env.example</code> ships with every required variable already
-            present. Fill in your own secrets before exposing the stack to anyone else.
+            <code className={ic}>.env.example</code> contains every required variable. Compose
+            refuses to start if one is missing rather than silently defaulting, so a copied file is
+            enough to boot.
           </p>
 
-          <div className={h3}>2 · Bring the stack up</div>
+          <div className={h3}>2 · Start</div>
           <DocCode>{`docker compose --profile webui up -d`}</DocCode>
           <p className={pm}>
-            First run builds the gateway from source, which takes a while. Afterwards it is seconds.
-            Drop <code className={ic}>--profile webui</code> if you only want the API.
+            The first run compiles the gateway from source and takes several minutes; later runs are
+            seconds. Omit <code className={ic}>--profile webui</code> for the API alone, add{" "}
+            <code className={ic}>--profile observability</code> for Prometheus and Grafana.
           </p>
 
-          <div className={h3}>3 · Check it is alive</div>
+          <div className={h3}>3 · Verify</div>
           <DocCode>{`curl http://localhost:8000/health
-# {"status":"healthy","version":"3.0.0"}`}</DocCode>
+# {"status":"healthy","timestamp":"...","version":"3.0.0"}
+
+curl http://localhost:8000/ready
+# {"status":"ready",...}`}</DocCode>
           <p className={pm}>
-            The console is on <code className={ic}>http://localhost:3001</code>. Register an account
-            there — the first thing you create is an organisation, then a project inside it.
+            <code className={ic}>/ready</code> reports ready when at least one configured provider
+            is callable — not when every one is, so a single working credential is enough to serve.
           </p>
 
           <Callout>
-            With no provider keys set, the stack routes to a bundled mock provider, so you can
-            exercise the whole flow without spending anything. Add{" "}
-            <code className={ic}>GEMINI_API_KEY</code> (or OpenAI/Anthropic) to{" "}
-            <code className={ic}>.env</code> and restart to use real models.
+            With no provider credentials set, the gateway routes to a bundled mock so you can
+            exercise the entire flow without spending anything. Add{" "}
+            <code className={ic}>GEMINI_API_KEY</code>, <code className={ic}>OPENAI_API_KEY</code>,
+            or <code className={ic}>ANTHROPIC_API_KEY</code> to <code className={ic}>.env</code> and
+            restart to use real models.
           </Callout>
         </DocSection>
 
-        <DocSection id="first-request" title="Your first request">
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="first-request" title="First request">
           <p className={pm}>
-            Four things have to be true before a completion will succeed. Most first-time failures
-            are one of these missing.
+            Four conditions must hold before a completion succeeds. Nearly every first-time failure
+            is one of them.
           </p>
-          <ol className={cn(pm, "mt-3 list-decimal space-y-1.5 pl-5")}>
-            <li>You have an organisation and a project.</li>
-            <li>
-              The project has a monthly budget above zero — otherwise generation returns{" "}
-              <code className={ic}>402</code>.
-            </li>
-            <li>
-              Your API key is scoped to that project — otherwise you get{" "}
-              <code className={ic}>400 project_scope_required</code>.
-            </li>
-            <li>
-              You send the key as <code className={ic}>x-api-key</code>.
-            </li>
-          </ol>
+          <Table head={["#", "Condition", "If missing"]}>
+            <tr>
+              <td className={tdMono}>1</td>
+              <td className={td}>An organisation and a project exist.</td>
+              <td className={td}>Nothing to scope a key to.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>2</td>
+              <td className={td}>
+                The project&apos;s <code className={ic}>budget_monthly</code> is above zero.
+              </td>
+              <td className={tdMono}>402 payment_required</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>3</td>
+              <td className={td}>The API key is scoped to that project.</td>
+              <td className={tdMono}>400 project_scope_required</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>4</td>
+              <td className={td}>
+                The key is sent as <code className={ic}>x-api-key</code>.
+              </td>
+              <td className={tdMono}>401 unauthorized</td>
+            </tr>
+          </Table>
           <p className={pm}>
-            Create the key from the project&apos;s Keys page in the console. The secret is shown
-            once, at creation, and is never retrievable again.
+            Projects are created with a zero budget, so step 2 is a real step and not a formality.
+            Set it in project settings, or over the API:
           </p>
-          <DocCode>{`curl http://localhost:8000/v1/chat/completions \\
+          <DocCode label="set a budget">{`curl -X PATCH http://localhost:8000/v1/orgs/$ORG/projects/$PROJECT \\
+  -H "authorization: Bearer $SESSION" \\
+  -H "content-type: application/json" \\
+  -d '{"budget_monthly": 100.0}'`}</DocCode>
+
+          <div className={h3}>Then call it</div>
+          <DocCode label="request">{`curl http://localhost:8000/v1/chat/completions \\
   -H "content-type: application/json" \\
   -H "x-api-key: $GAUSSMERIDIAN_KEY" \\
   -d '{
     "model": "gemini-2.5-flash",
-    "messages": [{"role": "user", "content": "Say hello"}]
+    "messages": [{"role": "user", "content": "What is 2+2?"}],
+    "max_tokens": 64
   }'`}</DocCode>
+          <DocCode label="response">{`{
+  "id": "gemini-96d72d5c-07c2-4bd7-920f-75412c4fcdc7",
+  "object": "chat.completion",
+  "created": 1786851159,
+  "model": "gemini-2.5-flash",
+  "choices": [{
+    "index": 0,
+    "message": { "role": "assistant", "content": "4" },
+    "finish_reason": "stop"
+  }],
+  "usage": { "prompt_tokens": 14, "completion_tokens": 1, "total_tokens": 15 }
+}`}</DocCode>
+          <Callout tone="warn">
+            Set <code className={ic}>max_tokens</code> generously. Reasoning models spend tokens
+            before emitting visible text, so a tight ceiling can return{" "}
+            <code className={ic}>finish_reason: &quot;length&quot;</code> with empty content — a
+            successful request with nothing in it.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="sdks" title="Use your SDK">
           <p className={pm}>
-            The response is OpenAI-shaped, so an existing SDK works unchanged once you set the base
-            URL and pass the key in the right header.
+            The API is OpenAI-shaped, so official SDKs work once the base URL points at the gateway.
+            The one adjustment is the credential header.
+          </p>
+          <DocCode label="python">{`from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="unused",                                  # the SDK requires a value
+    default_headers={"x-api-key": "YOUR_MERIDIAN_KEY"}, # this is what authenticates
+)
+
+resp = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(resp.choices[0].message.content)`}</DocCode>
+          <DocCode label="typescript">{`import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://localhost:8000/v1",
+  apiKey: "unused",
+  defaultHeaders: { "x-api-key": process.env.GAUSSMERIDIAN_KEY! },
+});
+
+const resp = await client.chat.completions.create({
+  model: "gemini-2.5-flash",
+  messages: [{ role: "user", content: "Hello" }],
+});`}</DocCode>
+          <p className={pm}>
+            The SDK will also send <code className={ic}>Authorization: Bearer unused</code>. That is
+            harmless: the gateway checks <code className={ic}>x-api-key</code> first and only falls
+            back to the bearer token when no API key header is present.
           </p>
         </DocSection>
 
-        <DocSection id="concepts" title="Orgs, projects, keys">
-          <p className={p}>
-            The hierarchy is three levels deep, and each level exists for a reason.
-          </p>
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="tenancy" title="Orgs and projects">
+          <p className={p}>Three levels, each with a distinct job.</p>
           <div className={h3}>Organisation</div>
           <p className={pm}>
-            The billing and membership boundary. People are invited to an org and given a role
-            there.
+            The membership and plan boundary. People are invited to an org and hold a role there.
+            Returned fields include <code className={ic}>plan</code>,{" "}
+            <code className={ic}>balance</code>, <code className={ic}>member_count</code>, and{" "}
+            <code className={ic}>project_count</code>.
           </p>
           <div className={h3}>Project</div>
           <p className={pm}>
-            Where budgets, model settings, and guardrail thresholds live. A project is the unit you
-            would map to one application or environment. Spend is tracked per project.
+            Where budget and routing behaviour live — map one to an application or an environment.
+            Spend is attributed per project.
           </p>
+          <Table head={["Field", "Meaning"]}>
+            <tr>
+              <td className={tdMono}>budget_monthly</td>
+              <td className={td}>Monthly ceiling. Zero blocks generation entirely.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>hard_limit</td>
+              <td className={td}>Whether exceeding the budget rejects rather than warns.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>quality_floor</td>
+              <td className={td}>Minimum acceptable candidate score, 0–1.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>lambda</td>
+              <td className={td}>Cost/quality trade-off weight used when ranking candidates.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>tau_moa</td>
+              <td className={td}>Per-project complexity threshold for mixture-of-agents.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>alert_webhook_url</td>
+              <td className={td}>Notified on budget events. Validated against SSRF on save.</td>
+            </tr>
+          </Table>
           <div className={h3}>API key</div>
           <p className={pm}>
-            Belongs to a project and inherits its budget. Keys carry their own rate limits and can
-            be revoked individually without touching the others.
+            Belongs to a project, inherits its budget, carries its own rate limits, and is revoked
+            independently of the others.
           </p>
-          <Callout tone="warn">
-            A key created outside a project — from the onboarding wizard, or a direct API call with
-            no <code className={ic}>project_id</code> — is stored unscoped. It authenticates, but it
-            cannot generate, because generation requires a project to bill against.
-          </Callout>
         </DocSection>
 
+        {/* ------------------------------------------------------------ */}
         <DocSection id="auth" title="Authentication">
           <p className={p}>
-            There are two credential types and they are not interchangeable. Sending the wrong one
-            is the single most common setup mistake.
+            Two credential types that are not interchangeable. Confusing them is the most common
+            setup mistake, and the failure looks like a broken key rather than a wrong header.
           </p>
-
-          <div className={h3}>API keys — for your code</div>
-          <p className={pm}>
-            Sent as <code className={ic}>x-api-key</code>. These are what your application uses.
-          </p>
-          <DocCode>{`curl http://localhost:8000/v1/models \\
-  -H "x-api-key: $GAUSSMERIDIAN_KEY"`}</DocCode>
-
-          <div className={h3}>Session tokens — for the console</div>
-          <p className={pm}>
-            Sent as <code className={ic}>Authorization: Bearer</code>, issued by{" "}
-            <code className={ic}>POST /v1/auth/login</code>. The console uses these; in the browser
-            they are carried in an http-only cookie rather than a header.
-          </p>
-
+          <Table head={["Credential", "Header", "Used by", "Obtained from"]}>
+            <tr>
+              <td className={td}>API key</td>
+              <td className={tdMono}>x-api-key</td>
+              <td className={td}>Your application</td>
+              <td className={tdMono}>POST /v1/api/keys</td>
+            </tr>
+            <tr>
+              <td className={td}>Session token</td>
+              <td className={tdMono}>Authorization: Bearer</td>
+              <td className={td}>The console</td>
+              <td className={tdMono}>POST /v1/auth/login</td>
+            </tr>
+          </Table>
           <Callout tone="warn">
-            An <code className={ic}>Authorization: Bearer</code> header is validated as a session
-            token, never as an API key. Put an API key there and you get{" "}
-            <code className={ic}>401 invalid credentials</code> — a correct answer that looks exactly
-            like a broken key. If a key you just created is rejected, check the header name first.
+            A bearer token is validated as a <em>session</em> token, never as an API key. Send an API
+            key that way and the answer is{" "}
+            <code className={ic}>401 invalid credentials</code> — technically correct, and
+            indistinguishable from a revoked key. If a key you just created is rejected, check the
+            header name before anything else.
+          </Callout>
+          <p className={pm}>
+            In the browser the console does not use a header at all: the session is an http-only
+            cookie, and the front end additionally rejects any state-changing request whose{" "}
+            <code className={ic}>Origin</code> does not match its own host. Tooling pointed at the
+            console&apos;s API routes must send an <code className={ic}>Origin</code> header or it
+            will receive <code className={ic}>403</code>.
+          </p>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="keys" title="API keys">
+          <DocCode label="create">{`curl -X POST http://localhost:8000/v1/api/keys \\
+  -H "authorization: Bearer $SESSION" \\
+  -H "content-type: application/json" \\
+  -d '{
+    "name": "production",
+    "project_id": "pblriuae4eyfke39q2af",
+    "rate_limit_per_minute": 60
+  }'`}</DocCode>
+          <DocCode label="response — the secret appears once">{`{
+  "key_id": "287zatv5bi24ma6obc2b",
+  "api_key": "6e3e6dbca450c82f7237cb1a6a9fa47f...",
+  "key_prefix": "6e3e6dbc",
+  "message": "API key created successfully. Store this key securely - it will not be shown again."
+}`}</DocCode>
+          <p className={pm}>
+            Only the prefix and a hash are stored. Listing keys returns metadata and never the
+            secret. Revoke by id:
+          </p>
+          <DocCode label="revoke">{`curl -X POST http://localhost:8000/v1/api/keys/revoke \\
+  -H "authorization: Bearer $SESSION" \\
+  -H "content-type: application/json" \\
+  -d '{"key_id": "287zatv5bi24ma6obc2b"}'`}</DocCode>
+          <Callout tone="warn">
+            Omitting <code className={ic}>project_id</code> creates an <em>unscoped</em> key. It
+            authenticates fine and passes <code className={ic}>/v1/models</code>, but generation
+            returns <code className={ic}>400 project_scope_required</code>, because there is no
+            project to bill.
           </Callout>
         </DocSection>
 
+        {/* ------------------------------------------------------------ */}
         <DocSection id="byok" title="Bring your own key">
           <p className={p}>
-            BYOK lets a project call a provider with its own credential instead of the one the
-            gateway is configured with. Keys are encrypted with{" "}
-            <code className={ic}>BYOK_MASTER_KEY</code> before storage and are never returned by any
-            endpoint after registration.
+            BYOK lets a project call a provider with its own credential instead of the gateway&apos;s.
+            Keys are encrypted with <code className={ic}>BYOK_MASTER_KEY</code> before storage and
+            are never returned by any endpoint afterwards.
           </p>
-          <DocCode>{`curl -X POST http://localhost:8000/v1/byok/keys \\
+          <DocCode label="register">{`curl -X POST http://localhost:8000/v1/byok/keys \\
+  -H "authorization: Bearer $SESSION" \\
+  -H "x-project-id: $PROJECT" \\
   -H "content-type: application/json" \\
-  -H "authorization: Bearer $SESSION_TOKEN" \\
-  -H "x-project-id: $PROJECT_ID" \\
-  -d '{"provider": "google", "api_key": "..."}'`}</DocCode>
+  -d '{"provider": "google", "api_key": "..."}'
+# {"message":"Provider key registered","provider":"google"}`}</DocCode>
           <p className={pm}>
-            Registration and deletion are admin-gated: the caller&apos;s email must appear in{" "}
-            <code className={ic}>BYOK_ADMIN_EMAILS</code>. If that variable is unset, every BYOK
-            write returns <code className={ic}>403</code>, by design.
+            Writes are gated on <code className={ic}>BYOK_ADMIN_EMAILS</code>. With that variable
+            unset every BYOK write returns <code className={ic}>403</code> — the default is closed,
+            not open.
           </p>
           <Callout tone="warn">
-            <strong>Known issue.</strong> Registration succeeds and stores the key, but the list and
-            delete endpoints do not currently return it — so a registered key cannot be inspected or
-            revoked through the API yet. Treat BYOK as write-only until that is fixed.
+            <strong>Known issue.</strong> Registration stores the key and logs the correct project,
+            but <code className={ic}>GET /v1/byok/keys</code> returns an empty list and{" "}
+            <code className={ic}>DELETE /v1/byok/keys/:provider</code> returns{" "}
+            <code className={ic}>404</code>. A registered key therefore cannot be listed, rotated,
+            or revoked through the API. Treat BYOK as write-only until this is fixed.
           </Callout>
         </DocSection>
 
-        <DocSection id="chat" title="Chat completions">
-          <p className={pm}>
-            <code className={ic}>POST /v1/chat/completions</code> — OpenAI-compatible. Streaming is
-            available at <code className={ic}>/v1/chat/completions/stream</code>, and{" "}
-            <code className={ic}>/v1/chat/completions/batch</code> accepts an array.
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="routing" title="How routing works">
+          <p className={p}>
+            Each request is scored against the catalog rather than sent straight to the named model.
+            The model you ask for is the starting point, not necessarily the one that serves.
           </p>
-          <Table head={["Field", "Notes"]}>
-            <tr>
-              <td className={tdMono}>model</td>
-              <td className={td}>A model configured for the project, e.g. gemini-2.5-flash.</td>
-            </tr>
-            <tr>
-              <td className={tdMono}>messages</td>
-              <td className={td}>Standard role/content array.</td>
-            </tr>
-            <tr>
-              <td className={tdMono}>max_tokens</td>
-              <td className={td}>Optional ceiling on the response.</td>
-            </tr>
-            <tr>
-              <td className={tdMono}>temperature</td>
-              <td className={td}>Passed through to the provider.</td>
-            </tr>
-          </Table>
-          <p className={pm}>
-            Also available: <code className={ic}>/v1/completions</code>,{" "}
-            <code className={ic}>/v1/embeddings</code>, and <code className={ic}>/v1/usage/:id</code>{" "}
-            for per-request accounting.
-          </p>
-        </DocSection>
-
-        <DocSection id="models" title="Models">
-          <p className={pm}>
-            <code className={ic}>GET /v1/models</code> lists what the gateway will route to, and{" "}
-            <code className={ic}>GET /v1/models/:model</code> returns one model&apos;s capabilities.
-          </p>
-          <DocCode>{`curl http://localhost:8000/v1/models \\
-  -H "x-api-key: $GAUSSMERIDIAN_KEY"`}</DocCode>
-          <p className={pm}>
-            The catalog is seeded at startup and covers the providers you have credentials for. A
-            model missing from this list will not route, even if the provider supports it.
-          </p>
-        </DocSection>
-
-        <DocSection id="headers" title="Response headers">
-          <p className={pm}>
-            Every completion carries headers describing what happened. They are the fastest way to
-            understand a routing decision without opening the console.
-          </p>
-          <Table head={["Header", "Meaning"]}>
-            {headerRows.map(([name, desc]) => (
-              <tr key={name}>
-                <td className={tdMono}>{name}</td>
-                <td className={td}>{desc}</td>
-              </tr>
-            ))}
-          </Table>
-        </DocSection>
-
-        <DocSection id="errors" title="Errors">
-          <p className={pm}>
-            Errors are JSON with a <code className={ic}>type</code> and a{" "}
-            <code className={ic}>code</code>. The codes below are the ones you are most likely to
-            meet while setting up.
-          </p>
-          <Table head={["Status", "Code", "What it means"]}>
-            {errorRows.map(([status, code, desc]) => (
-              <tr key={status + code}>
-                <td className={tdMono}>{status}</td>
-                <td className={tdMono}>{code}</td>
-                <td className={td}>{desc}</td>
-              </tr>
-            ))}
-          </Table>
-        </DocSection>
-
-        <DocSection id="configuration" title="Configuration">
-          <p className={pm}>
-            Configuration is environment variables, read at startup. Compose refuses to start if a
-            required one is missing rather than falling back to a default.
-          </p>
-          <Table head={["Variable", "", "Purpose"]}>
-            {envRows.map(([name, req, desc]) => (
-              <tr key={name}>
-                <td className={tdMono}>{name}</td>
-                <td className={cn(td, "text-muted-foreground font-mono text-[11px]")}>{req}</td>
-                <td className={td}>{desc}</td>
-              </tr>
-            ))}
-          </Table>
-          <Callout tone="warn">
-            Redis is configured through <code className={ic}>REDIS_URL</code>, deliberately without
-            a prefix — the server reads that name and no other. Setting{" "}
-            <code className={ic}>GAUSSMERIDIAN_REDIS_URL</code> silently leaves the gateway on its
-            built-in localhost default.
-          </Callout>
-        </DocSection>
-
-        <DocSection id="routing" title="Routing features">
-          <p className={pm}>
-            These are off unless you turn them on. Each is a single environment variable.
-          </p>
-          <div className={h3}>Guardrails</div>
-          <p className={pm}>
-            <code className={ic}>GAUSSMERIDIAN_GUARDRAIL_PII</code> and{" "}
-            <code className={ic}>GAUSSMERIDIAN_GUARDRAIL_INJECTION</code> scan responses and block
-            ones that trip them. A blocked response is reported in{" "}
-            <code className={ic}>x-gaussmeridian-guardrail</code>.
-          </p>
+          <ol className={cn(pm, "mt-3 list-decimal space-y-1.5 pl-5")}>
+            <li>
+              <strong>Complexity.</strong> The prompt is scored 0–1, surfaced as{" "}
+              <code className={ic}>x-gaussmeridian-complexity</code>.
+            </li>
+            <li>
+              <strong>Candidates.</strong> Models in the required capability band are ranked on
+              score and cost, weighted by the project&apos;s <code className={ic}>lambda</code>.
+            </li>
+            <li>
+              <strong>Band adjustment.</strong> With nothing available in the desired band, the
+              router moves to the nearest one and reports why in{" "}
+              <code className={ic}>x-gaussmeridian-band-reason</code>.
+            </li>
+            <li>
+              <strong>Budget check.</strong> The projected cost is reserved against the project
+              budget; insufficient budget fails the request before any provider is called.
+            </li>
+            <li>
+              <strong>Dispatch and guardrails.</strong> The response is scanned if guardrails are
+              on, and retried against the next candidate on provider failure.
+            </li>
+          </ol>
           <div className={h3}>Cascade</div>
           <p className={pm}>
-            <code className={ic}>GAUSSMERIDIAN_CASCADE</code> tries a cheaper model first and
-            escalates when confidence falls below{" "}
+            Tries a cheaper model first and escalates when confidence falls below{" "}
             <code className={ic}>GAUSSMERIDIAN_CASCADE_THRESHOLD</code>.
           </p>
           <div className={h3}>Mixture of agents</div>
           <p className={pm}>
-            <code className={ic}>GAUSSMERIDIAN_MOA</code> runs several models on complex prompts and
-            reconciles their answers. <code className={ic}>GAUSSMERIDIAN_MOA_AGENTS</code> is the
-            comma-separated roster and <code className={ic}>GAUSSMERIDIAN_TAU_MOA</code> is the
-            complexity threshold — 0.7 means high-complexity prompts only, 0.0 every request, 1.0
-            never.
+            Runs several models on complex prompts and reconciles the answers. Gated on complexity
+            exceeding <code className={ic}>GAUSSMERIDIAN_TAU_MOA</code> — 0.7 means high-complexity
+            prompts only, 0.0 every request, 1.0 never.
+          </p>
+          <Callout>
+            Every decision is recoverable after the fact. Take{" "}
+            <code className={ic}>x-gaussmeridian-ballot-id</code> from a response and read the full
+            candidate set and policy version from{" "}
+            <code className={ic}>GET /v1/route-decisions/:request_id</code>.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="endpoints" title="Endpoint reference">
+          <p className={pm}>
+            The complete surface, grouped by what it is for. &ldquo;API key&rdquo; means{" "}
+            <code className={ic}>x-api-key</code>; &ldquo;Session&rdquo; means a bearer token from
+            login; &ldquo;Admin&rdquo; additionally requires membership of{" "}
+            <code className={ic}>SUPERADMIN_EMAILS</code>.
+          </p>
+          {ENDPOINT_GROUPS.map((g) => (
+            <div key={g.id} className="mt-7">
+              <div className={h3}>{g.title}</div>
+              <p className={cn(pm, "mt-0")}>{g.blurb}</p>
+              <Table head={["Method", "Path", "Auth", "Summary"]}>
+                {g.endpoints.map((e) => (
+                  <tr key={e.method + e.path}>
+                    <td className={cn(tdMono, "text-muted-foreground whitespace-nowrap")}>
+                      {e.method}
+                    </td>
+                    <td className={cn(tdMono, "whitespace-nowrap")}>{e.path}</td>
+                    <td className={td}>
+                      <AuthPill kind={e.auth} />
+                    </td>
+                    <td className={td}>{e.summary}</td>
+                  </tr>
+                ))}
+              </Table>
+            </div>
+          ))}
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="completions" title="Chat completions">
+          <p className={pm}>
+            <code className={ic}>POST /v1/chat/completions</code> — request and response bodies match
+            the OpenAI schema.
+          </p>
+          <Table head={["Field", "Required", "Notes"]}>
+            <tr>
+              <td className={tdMono}>model</td>
+              <td className={td}>yes</td>
+              <td className={td}>
+                Must appear in <code className={ic}>GET /v1/models</code>, or it will not route.
+              </td>
+            </tr>
+            <tr>
+              <td className={tdMono}>messages</td>
+              <td className={td}>yes</td>
+              <td className={td}>
+                Non-empty. An empty array is <code className={ic}>400 empty_messages</code>.
+              </td>
+            </tr>
+            <tr>
+              <td className={tdMono}>max_tokens</td>
+              <td className={td}>no</td>
+              <td className={td}>Also caps the output budget the router reserves.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>temperature</td>
+              <td className={td}>no</td>
+              <td className={td}>Passed to the provider unchanged.</td>
+            </tr>
+            <tr>
+              <td className={tdMono}>stream</td>
+              <td className={td}>no</td>
+              <td className={td}>
+                Prefer the dedicated <code className={ic}>/stream</code> endpoint.
+              </td>
+            </tr>
+          </Table>
+          <p className={pm}>
+            <code className={ic}>GET /v1/usage/:request_id</code> returns the token and cost
+            accounting for a completed request, using the <code className={ic}>id</code> from the
+            response body.
           </p>
         </DocSection>
 
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="streaming" title="Streaming">
+          <p className={pm}>
+            <code className={ic}>POST /v1/chat/completions/stream</code> returns server-sent events
+            in the OpenAI chunk format, terminated by <code className={ic}>data: [DONE]</code>.
+          </p>
+          <DocCode>{`curl -N http://localhost:8000/v1/chat/completions/stream \\
+  -H "content-type: application/json" \\
+  -H "x-api-key: $GAUSSMERIDIAN_KEY" \\
+  -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"Count to three"}]}'
+
+data: {"id":"...","object":"chat.completion.chunk","choices":[{"delta":{"content":"One"}}]}
+data: {"id":"...","object":"chat.completion.chunk","choices":[{"delta":{"content":", two"}}]}
+data: [DONE]`}</DocCode>
+          <Callout>
+            Routing headers are sent with the response head, before the first chunk — so a streaming
+            client can read the selected model and cost estimate immediately, without waiting for
+            the body.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="headers" title="Response headers">
+          <p className={pm}>
+            A completion carries around 46 <code className={ic}>x-gaussmeridian-*</code> headers
+            describing the decision. They are grouped below by what question they answer.
+          </p>
+          {HEADER_FAMILIES.map((f) => (
+            <div key={f.id} className="mt-7">
+              <div className={h3}>{f.title}</div>
+              <p className={cn(pm, "mt-0")}>{f.blurb}</p>
+              <Table head={["Header", "Meaning"]}>
+                {f.rows.map(([name, meaning]) => (
+                  <tr key={name}>
+                    <td className={cn(tdMono, "whitespace-nowrap")}>{name}</td>
+                    <td className={td}>{meaning}</td>
+                  </tr>
+                ))}
+              </Table>
+            </div>
+          ))}
+          <Callout tone="warn">
+            <strong>Header size.</strong> <code className={ic}>catalog-version</code> and{" "}
+            <code className={ic}>price-version</code> enumerate every model in the catalog on every
+            response — together roughly 10&nbsp;KB, against a typical 400-byte body. Reverse proxies
+            commonly cap response headers at 4–8&nbsp;KB (nginx&apos;s{" "}
+            <code className={ic}>proxy_buffer_size</code> defaults to 4&nbsp;KB), and will return
+            502 rather than truncate. If you put a proxy in front of the gateway, raise its header
+            buffers.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="errors" title="Errors">
+          <p className={pm}>Errors are JSON and carry a machine-readable type and code.</p>
+          <DocCode>{`{
+  "error": {
+    "message": "Messages must contain at least one item",
+    "type": "invalid_request_error",
+    "code": "empty_messages",
+    "param": "messages"
+  }
+}`}</DocCode>
+          <Table head={["Status", "Code", "Meaning"]}>
+            {ERROR_ROWS.map(([status, code, meaning], i) => (
+              <tr key={i}>
+                <td className={cn(tdMono, "whitespace-nowrap")}>{status}</td>
+                <td className={cn(tdMono, "whitespace-nowrap")}>{code}</td>
+                <td className={td}>{meaning}</td>
+              </tr>
+            ))}
+          </Table>
+          <Callout>
+            The admin surface answers <code className={ic}>404</code> rather than{" "}
+            <code className={ic}>403</code> for non-superadmins. That is deliberate: it makes those
+            routes indistinguishable from routes that do not exist, so probing reveals nothing.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="configuration" title="Configuration">
+          <p className={pm}>
+            All configuration is environment variables read at startup. Variables marked{" "}
+            <span className="text-[var(--gauss-600)]">*</span> are required — Compose refuses to
+            start without them rather than falling back to a default.
+          </p>
+          <div className={h3}>Core</div>
+          <EnvTable rows={ENV_CORE} />
+          <div className={h3}>Providers</div>
+          <EnvTable rows={ENV_PROVIDERS} />
+          <div className={h3}>Routing behaviour</div>
+          <EnvTable rows={ENV_ROUTING} />
+          <div className={h3}>Access control</div>
+          <EnvTable rows={ENV_ACCESS} />
+          <div className={h3}>Infrastructure</div>
+          <EnvTable rows={ENV_INFRA} />
+          <Callout tone="warn">
+            <code className={ic}>REDIS_URL</code> is deliberately unprefixed. The server reads that
+            exact name and nothing else — setting{" "}
+            <code className={ic}>GAUSSMERIDIAN_REDIS_URL</code> instead leaves the gateway on its
+            built-in localhost default, pointing at the wrong host and unauthenticated, while Redis
+            itself demands a password.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
         <DocSection id="services" title="Services and ports">
           <p className={pm}>
-            <code className={ic}>docker compose up</code> starts these. Anything bound to{" "}
-            <code className={ic}>127.0.0.1</code> is deliberately not reachable from the network.
+            The Compose project is named <code className={ic}>gaussmeridian</code> regardless of the
+            directory you cloned into. Anything bound to <code className={ic}>127.0.0.1</code> is
+            deliberately not reachable from the network.
           </p>
-          <Table head={["Service", "Port", "Purpose"]}>
+          <Table head={["Service", "Address", "Profile", "Purpose"]}>
             <tr>
               <td className={td}>gaussmeridian</td>
-              <td className={tdMono}>8000</td>
-              <td className={td}>The API.</td>
+              <td className={tdMono}>:8000</td>
+              <td className={td}>default</td>
+              <td className={td}>The API. Metrics on 127.0.0.1:9090.</td>
             </tr>
             <tr>
               <td className={td}>webui</td>
-              <td className={tdMono}>3001</td>
-              <td className={td}>The console. Needs the webui profile.</td>
+              <td className={tdMono}>:3001</td>
+              <td className={tdMono}>webui</td>
+              <td className={td}>The console. Container listens on 3000.</td>
             </tr>
             <tr>
               <td className={td}>surrealdb</td>
               <td className={tdMono}>127.0.0.1:8001</td>
-              <td className={td}>Database. Loopback only.</td>
+              <td className={td}>default</td>
+              <td className={td}>Database, file-backed volume.</td>
             </tr>
             <tr>
               <td className={td}>redis</td>
               <td className={tdMono}>internal</td>
-              <td className={td}>Cache and rate-limit state. Password protected.</td>
+              <td className={td}>default</td>
+              <td className={td}>Cache and rate-limit state. Password required.</td>
             </tr>
             <tr>
               <td className={td}>mock-provider</td>
               <td className={tdMono}>internal</td>
-              <td className={td}>Deterministic stand-in so the stack runs with no keys.</td>
+              <td className={td}>default</td>
+              <td className={td}>Deterministic provider so the stack runs with no credentials.</td>
             </tr>
             <tr>
-              <td className={td}>prometheus / grafana</td>
-              <td className={tdMono}>127.0.0.1:9091 / 3000</td>
-              <td className={td}>Metrics. Needs the observability profile.</td>
+              <td className={td}>prometheus</td>
+              <td className={tdMono}>127.0.0.1:9091</td>
+              <td className={tdMono}>observability</td>
+              <td className={td}>Scrapes the gateway.</td>
+            </tr>
+            <tr>
+              <td className={td}>grafana</td>
+              <td className={tdMono}>:3000</td>
+              <td className={tdMono}>observability</td>
+              <td className={td}>Dashboards.</td>
             </tr>
           </Table>
+          <Callout>
+            Grafana takes host port 3000, which is why the console is published on 3001. Both can be
+            run together.
+          </Callout>
         </DocSection>
 
+        {/* ------------------------------------------------------------ */}
+        <DocSection id="production" title="Going to production">
+          <p className={pm}>
+            The defaults are tuned for a clone-and-run first experience. Before exposing the stack
+            to anyone else:
+          </p>
+          <ul className={cn(pm, "mt-2 list-disc space-y-1.5 pl-5")}>
+            <li>
+              <strong>Replace every secret.</strong> The shipped{" "}
+              <code className={ic}>.env.example</code> values are placeholders, and{" "}
+              <code className={ic}>BYOK_MASTER_KEY</code> falls back to a development-only default.
+              Generate one with <code className={ic}>openssl rand -base64 32</code>.
+            </li>
+            <li>
+              <strong>Set the access lists.</strong> Both{" "}
+              <code className={ic}>SUPERADMIN_EMAILS</code> and{" "}
+              <code className={ic}>BYOK_ADMIN_EMAILS</code> default to empty, which closes those
+              surfaces to everyone including you.
+            </li>
+            <li>
+              <strong>Raise proxy header buffers.</strong> See the note under response headers — the
+              defaults on most proxies are smaller than what the gateway emits.
+            </li>
+            <li>
+              <strong>Terminate TLS in front.</strong> The gateway serves plain HTTP.
+            </li>
+            <li>
+              <strong>Persist the volumes.</strong>{" "}
+              <code className={ic}>surrealdb-data</code> holds every account, key, and ledger entry.{" "}
+              <code className={ic}>docker compose down -v</code> destroys it.
+            </li>
+            <li>
+              <strong>Set per-key rate limits.</strong>{" "}
+              <code className={ic}>rate_limit_per_minute</code> is optional at creation and unlimited
+              when omitted.
+            </li>
+          </ul>
+          <Callout tone="warn">
+            <code className={ic}>docker compose down -v</code> removes the named volumes and with
+            them every account in the database. Use <code className={ic}>down</code> without{" "}
+            <code className={ic}>-v</code> unless you intend a clean slate.
+          </Callout>
+        </DocSection>
+
+        {/* ------------------------------------------------------------ */}
         <DocSection id="troubleshooting" title="Troubleshooting">
           <div className={h3}>Compose will not start</div>
           <p className={pm}>
-            A required variable is missing from <code className={ic}>.env</code>. The error names it.
-            Copying <code className={ic}>.env.example</code> again is usually the fastest fix — an
-            older <code className={ic}>.env</code> may predate a newly required variable.
+            A required variable is missing; the error names it. An{" "}
+            <code className={ic}>.env</code> carried over from an older checkout is the usual cause —
+            re-copy <code className={ic}>.env.example</code> and merge your values in.
           </p>
 
-          <div className={h3}>A key that should work returns 401</div>
+          <div className={h3}>A valid key returns 401</div>
           <p className={pm}>
-            Check the header. API keys go in <code className={ic}>x-api-key</code>;{" "}
+            Check the header name. API keys go in <code className={ic}>x-api-key</code>;{" "}
             <code className={ic}>Authorization: Bearer</code> is parsed as a session token and will
-            reject a valid key.
+            reject a perfectly good key.
           </p>
 
           <div className={h3}>Completions return 402</div>
           <p className={pm}>
-            The project&apos;s monthly budget is zero. Projects are created that way; set a budget in
-            project settings before generating.
+            The project&apos;s budget is zero, which is how projects are created. Set{" "}
+            <code className={ic}>budget_monthly</code> before generating.
+          </p>
+
+          <div className={h3}>Completions return 400 project_scope_required</div>
+          <p className={pm}>
+            The key was created without <code className={ic}>project_id</code>. Unscoped keys
+            authenticate but cannot generate. Issue a new one from the project.
           </p>
 
           <div className={h3}>A model will not route</div>
           <p className={pm}>
-            Confirm it appears in <code className={ic}>GET /v1/models</code>. If it does not, the
-            provider credential is missing or the model is outside the seeded catalog.
+            Confirm it is listed by <code className={ic}>GET /v1/models</code>. If not, the provider
+            credential is absent or the model is outside the seeded catalog. Compare against{" "}
+            <code className={ic}>x-gaussmeridian-candidates</code> on a working request to see what
+            the router considered.
           </p>
 
-          <div className={h3}>The console logs an error on first load</div>
+          <div className={h3}>Empty content with finish_reason: length</div>
           <p className={pm}>
-            A signed-out session check is expected and is logged at info level. If you see it as an
-            error, the console build predates that fix.
+            <code className={ic}>max_tokens</code> is too low. Reasoning models consume tokens before
+            producing visible output, so the ceiling is reached before any text is emitted.
+          </p>
+
+          <div className={h3}>502 from a reverse proxy</div>
+          <p className={pm}>
+            Almost certainly response header size. Raise{" "}
+            <code className={ic}>proxy_buffer_size</code> and{" "}
+            <code className={ic}>proxy_buffers</code> to 16&nbsp;KB or more.
+          </p>
+
+          <div className={h3}>Everything 403s through the console&apos;s API routes</div>
+          <p className={pm}>
+            The console rejects state-changing requests whose <code className={ic}>Origin</code> does
+            not match its host, and fails closed when the header is absent. Send one, or call the
+            gateway on port 8000 directly.
           </p>
         </DocSection>
       </main>
