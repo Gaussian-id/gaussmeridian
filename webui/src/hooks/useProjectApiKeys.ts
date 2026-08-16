@@ -11,14 +11,29 @@ import {
 
 import { useResourceQuery } from "./useResourceQuery";
 
-function projectKeysResource(orgId: string, projectId: string): string {
-  return `v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/keys`;
-}
+/**
+ * API keys live at `v1/api/keys`, not under the org/project path.
+ *
+ * These hooks used to address `v1/orgs/{orgId}/projects/{projectId}/keys`, which the gateway has
+ * never served — `routes.rs` nests the key routes under `/api`, and the org routes stop at
+ * `/:id/projects/:pid`. Every create, list, and revoke from the project keys page 404'd, so the
+ * console could not issue an API key at all.
+ *
+ * The gateway scopes a key by `project_id` in the request body rather than by URL, and returns the
+ * caller's keys as one collection. Project scoping is therefore applied here: the list is filtered
+ * to the project being viewed, and creation passes the project through.
+ */
+const KEYS_RESOURCE = "v1/api/keys";
+const REVOKE_RESOURCE = "v1/api/keys/revoke";
 
 export function useProjectApiKeys(orgId: string, projectId: string) {
   return useResourceQuery({
-    resource: projectKeysResource(orgId, projectId),
-    schema: z.array(ProjectApiKeySchema),
+    resource: KEYS_RESOURCE,
+    // `GET v1/api/keys` returns every key the caller owns, across projects. Narrow it to the
+    // project on screen so the page does not show keys belonging to a different one.
+    schema: z
+      .array(ProjectApiKeySchema)
+      .transform((keys) => keys.filter((key) => key.project_id === projectId)),
     enabled: Boolean(orgId && projectId),
   });
 }
@@ -26,7 +41,6 @@ export function useProjectApiKeys(orgId: string, projectId: string) {
 export function useCreateProjectApiKey(orgId: string, projectId: string) {
   const data = useDataQuery();
   const queryClient = useQueryClient();
-  const resource = projectKeysResource(orgId, projectId);
 
   return useMutation({
     mutationFn: (
@@ -38,27 +52,31 @@ export function useCreateProjectApiKey(orgId: string, projectId: string) {
       } = {},
     ) =>
       data.query({
-        resource,
+        resource: KEYS_RESOURCE,
         method: "POST",
-        body: input,
+        // The project is carried in the body, not the path. Without it the gateway stores the key
+        // unscoped, and generation later fails with `project_scope_required`.
+        body: { ...input, project_id: projectId },
         schema: CreateApiKeyResponseSchema,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [resource, null] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEYS_RESOURCE, null] }),
   });
 }
 
 export function useRevokeProjectApiKey(orgId: string, projectId: string) {
   const data = useDataQuery();
   const queryClient = useQueryClient();
-  const resource = projectKeysResource(orgId, projectId);
 
   return useMutation({
+    // Revocation is a POST to a dedicated endpoint with the key id in the body — there is no
+    // DELETE route for an individual key.
     mutationFn: (keyId: string) =>
       data.query({
-        resource: `${resource}/${encodeURIComponent(keyId)}`,
-        method: "DELETE",
-        schema: z.undefined(),
+        resource: REVOKE_RESOURCE,
+        method: "POST",
+        body: { key_id: keyId },
+        schema: z.unknown(),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [resource, null] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEYS_RESOURCE, null] }),
   });
 }

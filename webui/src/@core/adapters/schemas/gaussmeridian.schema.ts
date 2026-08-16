@@ -434,7 +434,10 @@ export type CommerceSubscription = z.infer<typeof CommerceSubscriptionSchema>;
  */
 export const ProjectApiKeySchema = z.object({
   id: z.string(),
-  project_id: z.string(),
+  // Nullable: `create_api_key` takes `project_id` as optional, so a key created outside the
+  // project flow (the onboarding wizard's "first API key" step, or a direct API call) is stored
+  // unscoped. A single unscoped key in the list would otherwise fail the whole array parse.
+  project_id: z.string().nullable(),
   key_prefix: z.string(),
   name: z.string().nullable(),
   rate_limit_per_minute: z.number().nullable(),
