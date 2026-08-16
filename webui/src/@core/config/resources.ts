@@ -203,18 +203,10 @@ export function adminDeletionRequestRejectResource(id: string): string {
 /** `GET /v1/admin/overview?window=` — the CEO Business dashboard: current month + windowed series. */
 export const ADMIN_OVERVIEW_RESOURCE = "v1/admin/overview";
 
-/** `GET /v1/admin/finance?window=` — the Finance Home: windowed series + cost by model/provider. */
-export const ADMIN_FINANCE_RESOURCE = "v1/admin/finance";
 
 /** Redacted operator correlation view for one tenant-owned top-up order. */
-export function adminTopUpTimelineResource(orgId: string, orderId: string): string {
-  return `v1/admin/finance/topups/${orgId}/${orderId}/timeline`;
-}
 
 /** Auditable replay of already-accepted evidence; never accepts a provider fact or balance. */
-export function adminTopUpRepairResource(orgId: string, orderId: string): string {
-  return `v1/admin/finance/topups/${orgId}/${orderId}/repair`;
-}
 
 /** `GET /v1/admin/cost?group_by=&window=&sort=` — the cost pivot (group_by ∈
  *  org|project|user|model|provider|key; sort ∈ desc|asc). */

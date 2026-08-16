@@ -108,7 +108,6 @@ const BFF_ROUTE_POLICY: readonly BffRouteRule[] = [
   { methods: ["GET"], path: exact("v1/admin/me") },
   { methods: ["GET"], path: exact("v1/admin/metrics") },
   { methods: ["GET"], path: exact("v1/admin/overview") },
-  { methods: ["GET"], path: exact("v1/admin/finance") },
   { methods: ["GET"], path: exact("v1/admin/cost") },
   { methods: ["GET"], path: exact("v1/admin/orgs") },
   { methods: ["GET"], path: exact(`v1/admin/orgs/${SEGMENT}`) },
@@ -121,14 +120,6 @@ const BFF_ROUTE_POLICY: readonly BffRouteRule[] = [
   {
     methods: ["POST"],
     path: exact(`v1/admin/deletion-requests/${SEGMENT}/(?:fulfill|reject)`),
-  },
-  {
-    methods: ["GET"],
-    path: exact(`v1/admin/finance/topups/${SEGMENT}/${SEGMENT}/timeline`),
-  },
-  {
-    methods: ["POST"],
-    path: exact(`v1/admin/finance/topups/${SEGMENT}/${SEGMENT}/repair`),
   },
   { methods: ["GET"], path: exact(`v1/admin/(?:orgs|projects)/${SEGMENT}/impact`) },
   {
