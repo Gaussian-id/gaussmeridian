@@ -22,8 +22,9 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The gateway is pulled prebuilt from Docker Hub. The console builds from source on the
-first run, so give it a few minutes.
+The gateway and the mock provider are **pulled prebuilt from Docker Hub** — nothing
+Rust compiles on your machine. The console builds from source on the first run, because
+its source is in this repository; give it a few minutes.
 
 ```bash
 docker compose ps                    # all services healthy
@@ -102,6 +103,50 @@ zero-key path: the stack is provably up before any spend.
 
 Per-customer keys (BYOK) are stored AES-256-encrypted under `BYOK_MASTER_KEY` and are
 managed per project in the console.
+
+---
+
+## Images
+
+Published on Docker Hub. `docker compose up` pulls them for you; these are here for
+when you want to pin a version, run the gateway without this repository, or put it
+behind your own orchestration.
+
+| Image | What it is |
+| --- | --- |
+| [`gaussianid/gaussmeridian`](https://hub.docker.com/r/gaussianid/gaussmeridian) | The gateway |
+| [`gaussianid/gaussmeridian-webui`](https://hub.docker.com/r/gaussianid/gaussmeridian-webui) | The console |
+| [`gaussianid/gaussmeridian-mock`](https://hub.docker.com/r/gaussianid/gaussmeridian-mock) | The zero-key mock provider |
+
+Each carries `latest` and a version tag. **Pin the version in anything you care
+about** — `latest` moves.
+
+```bash
+docker pull gaussianid/gaussmeridian:3.0.0
+```
+
+Compose reads the tag from `TAG`, so the whole stack pins together:
+
+```bash
+TAG=3.0.0 docker compose up -d
+```
+
+The gateway needs SurrealDB and Redis reachable, and it reads its configuration from the
+environment — `docker-compose.yml` in this repository is the reference for what it
+expects. Running it bare:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e GAUSSMERIDIAN_DB_URL=ws://your-surrealdb:8000 \
+  -e GAUSSMERIDIAN_DB_USERNAME=root -e GAUSSMERIDIAN_DB_PASSWORD=... \
+  -e REDIS_URL=redis://:password@your-redis:6379 \
+  -e JWT_SECRET=... -e GAUSSMERIDIAN_API_KEY=... \
+  gaussianid/gaussmeridian:3.0.0
+```
+
+If you modify the gateway and serve it over a network, set `SOURCE_OFFER_URL` to a URL
+carrying your source. That is the whole of what AGPL Section 13 asks of you, and the
+image advertises whatever you set in the `x-source-offer` header on every response.
 
 ---
 
