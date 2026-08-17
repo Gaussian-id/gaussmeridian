@@ -5,15 +5,19 @@
   <img src="webui/public/logo/meridian-lockup-dark.svg" alt="GaussMeridian — self-hosted LLM gateway and router" width="440">
 </picture>
 
-# GaussMeridian
+# GaussMeridian — Self-Hosted LLM Gateway & Router
 
-**Self-hosted LLM gateway and router — one OpenAI-compatible endpoint in front of every model you use.**
+**One OpenAI-compatible endpoint in front of every model you use.**
 
-Route requests across OpenAI, Anthropic, Google Gemini and local models, with a web console for API keys, projects, budgets and usage. Written in Rust, deployed with Docker.
+Route requests across OpenAI, Anthropic, Google Gemini, and local models behind any OpenAI-compatible endpoint — with a web console for API keys, projects, budgets and usage. Written in Rust, deployed with Docker.
 
 [![License](https://img.shields.io/badge/license-AGPL--3.0-1A60E6?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/docker/v/gaussianid/gaussmeridian?label=docker&style=flat-square&color=6D41F2)](https://hub.docker.com/r/gaussianid/gaussmeridian)
 [![Rust](https://img.shields.io/badge/rust-stable-000000?style=flat-square)](gaussmeridian)
+
+<br>
+
+<img src="docs/images/console-models.png" alt="GaussMeridian console — the model catalog available to a project" width="900">
 
 </div>
 
@@ -21,7 +25,7 @@ Route requests across OpenAI, Anthropic, Google Gemini and local models, with a 
 
 ## What it does
 
-- **One endpoint, every provider** — OpenAI, Anthropic, Google Gemini and local models behind a single OpenAI-compatible API. Point an existing SDK at it and change nothing else.
+- **One endpoint, every provider** — OpenAI, Anthropic, Google Gemini, and local runtimes such as Ollama or vLLM via `OPENAI_BASE_URL`, all behind a single OpenAI-compatible API. Point an existing SDK at it and change nothing else.
 - **Routing you control** — per-project policy over cost, quality floor and model allowlists, with the routing decision recorded for every request.
 - **Keys, projects, budgets** — a web console for API key management, project scoping and monthly spend limits.
 - **BYOK** — customer-supplied provider keys, AES-256 encrypted at rest, managed per project.
@@ -29,6 +33,13 @@ Route requests across OpenAI, Anthropic, Google Gemini and local models, with a 
 
 If you are evaluating LLM gateways and proxies — LiteLLM, OpenRouter, Portkey — this is the same
 category: one API in front of many model providers, run on your own hardware.
+
+## The console
+
+| | |
+| :---: | :---: |
+| <img src="docs/images/console-playground.png" alt="Playground — send a prompt to any enabled model" width="440"><br>**Playground** — try any enabled model | <img src="docs/images/console-api-keys.png" alt="API keys — per-project keys with rate limits and expiry" width="440"><br>**API keys** — scoped per project |
+| <img src="docs/images/console-overview.png" alt="Project overview — requests, tokens and settled usage charge" width="440"><br>**Overview** — requests, tokens, spend | <img src="docs/images/console-models.png" alt="Model catalog — every model the router can reach" width="440"><br>**Models** — everything the router can reach |
 
 ## Quickstart
 
@@ -149,6 +160,40 @@ docker compose --profile webui --profile observability up -d
 The gateway binary ships as a container image rather than as source here. The library crates it
 is built on are in this repository and carry the same licence.
 
+## FAQ
+
+### Is this an alternative to LiteLLM, OpenRouter or Portkey?
+
+Same category — one API in front of many model providers. GaussMeridian is self-hosted rather
+than managed, written in Rust, and ships a console for projects, budgets and keys.
+
+### Does it work with the OpenAI SDK?
+
+Yes. Point the client's base URL at `http://localhost:8000/v1` and send your GaussMeridian key.
+The chat, completions, embeddings and models endpoints follow the OpenAI shapes, streaming
+included.
+
+### Can I run local models through it?
+
+Yes, through any OpenAI-compatible endpoint. Set `OPENAI_BASE_URL` to an Ollama, vLLM or
+LM Studio server and requests route there instead of to OpenAI.
+
+### How does it decide which model to use?
+
+Per-project routing policy — a cost weight, a quality floor, and model allowlists. Every
+request records the decision and the models it excluded, so a refusal tells you which
+constraint bit rather than failing silently.
+
+### Can customers use their own provider keys?
+
+Yes. BYOK keys are AES-256 encrypted at rest under a master key you control, scoped per project
+and managed from the console.
+
+### Is it production ready?
+
+It is a technical preview. The API is stable enough to build against; expect breaking changes
+before 1.0.
+
 ## Contributing
 
 Issues and pull requests welcome — [CONTRIBUTING.md](CONTRIBUTING.md) covers the DCO sign-off
@@ -169,4 +214,6 @@ Trademarks: [TRADEMARKS.md](TRADEMARKS.md).
   <img src="webui/public/logo/meridian-mark-dark.svg" alt="" width="28">
 </picture>
 <br><sub>Built by <a href="https://github.com/Gaussian-id">Gaussian</a></sub>
+<br><br>
+<sub>LLM gateway · LLM router · AI gateway · OpenAI-compatible API · self-hosted LLM proxy · model routing · LLMOps · BYOK</sub>
 </div>
