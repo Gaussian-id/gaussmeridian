@@ -22,10 +22,9 @@ services:
   # Mock Provider — OpenAI-compatible, zero keys, zero spend (quickstart default)
   # ---------------------------------------------------------------------------
   mock-provider:
-    build:
-      context: ./gaussmeridian
-      dockerfile: scripts/mock-provider/Dockerfile
-    image: ghcr.io/gaussian-id/gaussmeridian-mock:${TAG:-latest}
+    # Pulled, not built: the mock's source lives with the gateway, which this
+    # repository distributes as an image rather than as source.
+    image: gaussianid/gaussmeridian-mock:${TAG:-latest}
     container_name: gaussmeridian-mock-provider
     restart: unless-stopped
     networks:
@@ -35,11 +34,10 @@ services:
   # GaussMeridian Backend API
   # ---------------------------------------------------------------------------
   gaussmeridian:
-    build:
-      context: ./gaussmeridian
-      dockerfile: Dockerfile
-      target: runtime
-    image: ghcr.io/gaussian-id/gaussmeridian:${TAG:-latest}
+    # The gateway is distributed as a prebuilt image. `docker compose up` pulls
+    # it; there is no build stanza because this repository ships the library
+    # crates the gateway is built on, not the binary's own crate.
+    image: gaussianid/gaussmeridian:${TAG:-latest}
     container_name: gaussmeridian-api
     restart: unless-stopped
     ports:
@@ -189,7 +187,7 @@ services:
         # (see webui/src/@core/lib/env.ts). Must be reachable from the host
         # running the browser, NOT the in-network service name.
         NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
-    image: ghcr.io/gaussian-id/gaussmeridian-webui:${TAG:-latest}
+    image: gaussianid/gaussmeridian-webui:${TAG:-latest}
     container_name: gaussmeridian-webui
     restart: unless-stopped
     ports:
