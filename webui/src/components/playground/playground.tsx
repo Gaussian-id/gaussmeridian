@@ -117,12 +117,6 @@ function ProjectPlayground({ projectId, orgId }: { projectId: string; orgId?: st
                   Add credit to this organization, then retry the same request.
                 </p>
               </div>
-              <Link
-                href={`/orgs/${orgId}/billing`}
-                className={buttonVariants({ variant: "accent", size: "sm" })}
-              >
-                Go to Billing
-              </Link>
             </div>
           ) : null}
           <PlaygroundComposer onSend={handleSend} disabled={isStreaming} />

@@ -2,8 +2,6 @@
 
 import { Building2, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import { cn } from "@core/lib/utils";
 
@@ -11,29 +9,24 @@ import { buttonVariants } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrgs } from "@/hooks/useConsoleQueries";
-import { ADD_CREDIT_INTENT, billingHref } from "@/lib/billing/billing-intent";
 
 import { OrgCard } from "./org-card";
 
 /**
- * The ordinary app entry renders every organization as a card. The bounded add-credit entry is
- * deliberately different: zero organizations continues to creation, one resolves directly to
- * Billing, and many require the user to choose the wallet recipient.
+ * The app entry: every organization the caller belongs to, rendered as a card.
+ *
+ * There used to be a second mode here — an "add credit" entry that auto-forwarded a sole
+ * organization straight to `/orgs/:id/billing`. That route was removed with the billing surfaces,
+ * so the redirect landed users on a 404 without them clicking anything named billing. The mode is
+ * gone with it.
  */
-export function OrgChooser({ fundingIntent = false }: { fundingIntent?: boolean }) {
-  const router = useRouter();
+export function OrgChooser() {
   const orgs = useOrgs();
-  const soleOrg = fundingIntent && orgs.data?.orgs.length === 1 ? orgs.data.orgs[0] : undefined;
-  const createHref = fundingIntent ? `/orgs/new?intent=${ADD_CREDIT_INTENT}` : "/orgs/new";
-
-  useEffect(() => {
-    if (soleOrg) router.replace(billingHref(soleOrg.id));
-  }, [router, soleOrg]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-end">
-        <Link href={createHref} className={cn(buttonVariants({ variant: "accent" }))}>
+        <Link href="/orgs/new" className={cn(buttonVariants({ variant: "accent" }))}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create organization
         </Link>
@@ -65,30 +58,19 @@ export function OrgChooser({ fundingIntent = false }: { fundingIntent?: boolean 
               routing requests through GaussMeridian.
             </p>
           </div>
-          <Link href={createHref} className={cn(buttonVariants({ variant: "accent" }))}>
+          <Link href="/orgs/new" className={cn(buttonVariants({ variant: "accent" }))}>
             <Plus className="h-4 w-4" aria-hidden="true" />
             Create organization
           </Link>
         </div>
       )}
 
-      {soleOrg ? (
-        <div
-          className="border-border bg-card rounded-xl border px-6 py-10 text-center"
-          role="status"
-        >
-          <p className="font-display text-lg font-semibold">Opening {soleOrg.name} billing…</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            This organization will receive the credit.
-          </p>
-        </div>
-      ) : orgs.isSuccess && orgs.data.orgs.length > 0 ? (
+      {orgs.isSuccess && orgs.data.orgs.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {orgs.data.orgs.map((org) => (
             <OrgCard
               key={org.id}
               org={org}
-              href={fundingIntent ? billingHref(org.id) : undefined}
             />
           ))}
         </div>

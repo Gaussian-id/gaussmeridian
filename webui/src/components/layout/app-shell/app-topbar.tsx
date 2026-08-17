@@ -1,7 +1,9 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Link from "next/link";
 
+import { BrandLogo } from "@/components/brand";
 import { useCommandPaletteTrigger } from "@/components/command";
 import { AccountMenu } from "@/components/layout/navbar/account-menu";
 
@@ -19,6 +21,14 @@ export function AppTopbar() {
   return (
     <header className="border-border bg-background/70 sticky top-0 z-40 flex h-16 items-center gap-2 border-b px-3 backdrop-blur sm:gap-4 sm:px-6">
       <AppMobileNavigation />
+      {/* The sidebar that carries the brand is hidden below `md`, which left the console with no
+          identity at all on a phone. The mark fills that gap without crowding the topbar. */}
+      <Link
+        href="/"
+        className="focus-visible:ring-ring flex shrink-0 items-center rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+      >
+        <BrandLogo variant="mark" height={26} />
+      </Link>
       <button
         type="button"
         onClick={palette.open}

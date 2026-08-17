@@ -40,8 +40,19 @@ describe("route guard proxy (Next.js 16 — formerly `middleware`)", () => {
     expect(res?.status).not.toBe(307);
   });
 
-  it("redirects an unauthenticated request to the global /playground to /login", () => {
+  // The global /playground was removed — the Playground is project-scoped, so it is already
+  // covered by the /orgs guard. The prefix must NOT be guarded any more, or the router would
+  // bounce a 404 through /login instead of just 404ing.
+  it("no longer guards a global /playground", () => {
     const req = new NextRequest(new URL("http://localhost:3000/playground"));
+    const res = proxy(req);
+    expect(res?.status).not.toBe(307);
+  });
+
+  it("still guards the project-scoped Playground via the /orgs tree", () => {
+    const req = new NextRequest(
+      new URL("http://localhost:3000/orgs/org-1/projects/proj-1/playground"),
+    );
     const res = proxy(req);
     expect(res?.status).toBe(307);
     expect(res?.headers.get("location")).toContain("/login");
@@ -62,10 +73,10 @@ describe("route guard proxy (Next.js 16 — formerly `middleware`)", () => {
     expect(res?.status).not.toBe(307);
   });
 
-  it("guards the /orgs, /playground, and /account trees in the matcher config", () => {
+  it("guards the /orgs and /account trees in the matcher config", () => {
     expect(config.matcher).toContain("/orgs/:path*");
-    expect(config.matcher).toContain("/playground/:path*");
     expect(config.matcher).toContain("/account/:path*");
+    expect(config.matcher).not.toContain("/playground/:path*");
   });
 
   it("redirects an unauthenticated request to /admin to /login (PRD-23 Wave C)", () => {

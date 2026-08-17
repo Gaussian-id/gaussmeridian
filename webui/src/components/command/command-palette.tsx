@@ -9,7 +9,6 @@ import {
   KeyRound,
   LayoutDashboard,
   ListOrdered,
-  MessageSquare,
   Package,
   Search,
   Settings,
@@ -114,11 +113,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                     onSelect={() => go("/orgs")}
                   />
                   <PaletteItem
-                    icon={MessageSquare}
-                    label="Playground"
-                    onSelect={() => go("/playground")}
-                  />
-                  <PaletteItem
                     icon={Sparkles}
                     label="CARROT — complexity explainer"
                     keywords={["carrot", "complexity", "score", "routing"]}
@@ -155,11 +149,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                       icon={ShieldCheck}
                       label="Roles"
                       onSelect={() => go(`/orgs/${org.id}/roles`)}
-                    />
-                    <PaletteItem
-                      icon={CreditCard}
-                      label="Billing"
-                      onSelect={() => go(`/orgs/${org.id}/billing`)}
                     />
                     <PaletteItem
                       icon={Settings}

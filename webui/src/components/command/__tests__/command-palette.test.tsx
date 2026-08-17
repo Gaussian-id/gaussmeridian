@@ -76,9 +76,9 @@ describe("CommandPalette", () => {
     setup();
     pressCtrlK();
 
-    fireEvent.click(screen.getByText("Playground"));
+    fireEvent.click(screen.getByText("Organizations"));
 
-    expect(push).toHaveBeenCalledWith("/playground");
+    expect(push).toHaveBeenCalledWith("/orgs");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

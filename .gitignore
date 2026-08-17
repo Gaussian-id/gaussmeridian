@@ -25,9 +25,12 @@
 **/*.tsbuildinfo
 
 # Environment variables
+# Every dotenv variant is ignored, including backups such as `.env.bak-<timestamp>`.
+# `.env.example` is the one committed file and is re-allowed below.
 **/.env
-**/.env.local
-**/.env.*.local
+**/.env.*
+!**/.env.example
+
 
 # SurrealDB local database files
 gaussmeridian.db/

@@ -9,7 +9,7 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
  * /account/me — "Account preferences" (Shelby's adjustment 2/4): reached from the navbar's
  * Supabase-style avatar menu (`AccountMenu`, `layout/navbar/account-menu.tsx`). Global — not
  * org/project-scoped — so it sits directly under the `(app)` route group next to `/orgs` and
- * `/playground`, guarded the same way (`src/proxy.ts`'s `GUARDED_PREFIXES`).
+ * guarded the same way (`src/proxy.ts`'s `GUARDED_PREFIXES`).
  *
  * Three surfaces: editable profile (display name/full name/company/timezone, username/email
  * read-only — `AccountProfileForm`), a password-change section that stays disabled with a

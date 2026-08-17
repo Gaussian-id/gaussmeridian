@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { siteConfig } from "@core/config";
+import { BrandLogoResponsive } from "@/components/brand";
 
 export function NavbarLogo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-      <span aria-hidden="true" className="bg-brand-gradient shadow-glow size-[18px] rounded-full" />
-      <span className="font-display text-lg">{siteConfig.shortName}</span>
+    <Link
+      href="/"
+      className="focus-visible:ring-ring flex items-center rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+    >
+      <BrandLogoResponsive markHeight={28} lockupHeight={34} />
     </Link>
   );
 }

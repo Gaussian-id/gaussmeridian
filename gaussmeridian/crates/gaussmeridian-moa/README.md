@@ -147,7 +147,15 @@ Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+GNU Affero General Public License v3.0 only (`AGPL-3.0-only`), inherited from the
+GaussMeridian workspace — see the repository-root [`LICENSE`](../../../LICENSE). This
+crate carries no separate license of its own.
+
+Because `gaussmeridian-moa` runs inside a network-facing gateway, AGPL-3.0 Section 13
+reaches it: if you modify this crate and expose the orchestration service to users
+over a network, you must offer those users the Corresponding Source of your modified
+build. See the repository-root [`NOTICE`](../../../NOTICE) for how GaussMeridian
+publishes that offer.
 
 ## Acknowledgments
 

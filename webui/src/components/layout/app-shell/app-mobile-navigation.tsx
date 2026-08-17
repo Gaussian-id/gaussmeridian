@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { siteConfig } from "@core/config";
 
+import { BrandLogo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -37,6 +38,7 @@ export function AppMobileNavigation() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[min(20rem,calc(100vw-2rem))] sm:max-w-xs">
         <SheetHeader>
+          <BrandLogo height={30} className="mb-1" />
           <SheetTitle>Product navigation</SheetTitle>
           <SheetDescription>{siteConfig.name} workspace and project destinations.</SheetDescription>
         </SheetHeader>

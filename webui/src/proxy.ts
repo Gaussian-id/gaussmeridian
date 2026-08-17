@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GUARDED_PREFIXES = ["/orgs", "/playground", "/onboarding", "/account", "/admin"];
+const GUARDED_PREFIXES = ["/orgs", "/onboarding", "/account", "/admin"];
 const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function proxy(request: NextRequest) {
@@ -43,7 +43,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/orgs/:path*",
-    "/playground/:path*",
     "/onboarding/:path*",
     "/account/:path*",
     "/admin/:path*",

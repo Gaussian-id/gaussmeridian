@@ -4,31 +4,34 @@ import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const PLAYGROUND_HREF = "/playground";
 const PROJECT_ROUTE = /^(\/orgs\/[^/]+\/projects\/[^/]+)(?:\/|$)/;
 
-function playgroundHref(pathname: string | null): string {
+/** The Playground is project-scoped. Outside a project there is nowhere to send the user. */
+function playgroundHref(pathname: string | null): string | null {
   const projectBase = pathname?.match(PROJECT_ROUTE)?.[1];
-  return projectBase ? `${projectBase}/playground` : PLAYGROUND_HREF;
+  return projectBase ? `${projectBase}/playground` : null;
 }
 
 /**
- * Floating launcher for the global Playground. Used to be its own miniature chat panel
- * (`ChatPanel`) — now that M5 ships a full ChatGPT-style chat at `/playground`, keeping a
- * second, smaller chat UI floating over every screen would just be two competing chat
- * surfaces telling two different stories about the same assistant. This deep-links to the
- * real one instead of duplicating it.
+ * Floating launcher for the project Playground. Used to be its own miniature chat panel
+ * (`ChatPanel`) — keeping a second, smaller chat UI floating over every screen would just be
+ * two competing chat surfaces telling two different stories about the same assistant. This
+ * deep-links to the real one instead of duplicating it.
  *
- * Hidden while already on the Playground route — linking to the page you're standing on is
+ * Renders only inside a project. The global `/playground` route was removed: a Playground with
+ * no project has no API key, no budget and no model catalog to route against, so the shortcut
+ * has no destination outside a project and is hidden rather than pointing somewhere broken.
+ *
+ * Also hidden while already on the Playground route — linking to the page you're standing on is
  * a pointless self-link. Uses the same prefix-match idiom as `resolveActiveHref` in
  * `nav.config.ts` so it also hides on any future nested Playground route.
  */
 export function ChatWidget() {
   const pathname = usePathname();
   const href = playgroundHref(pathname);
-  const onPlayground = pathname === href || pathname?.startsWith(`${href}/`);
 
-  if (onPlayground) return null;
+  if (!href) return null;
+  if (pathname === href || pathname?.startsWith(`${href}/`)) return null;
 
   return (
     <aside aria-label="Playground shortcut">

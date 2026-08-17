@@ -223,16 +223,15 @@ export const OnboardingStateResponseSchema = z.object({
   current_step: z.string().nullable(),
   completed_steps: z.array(z.string()),
   onboarding_completed: z.boolean(),
-  // The gateway does not emit this field yet: `GET /v1/onboarding/state` returns only
-  // current_step / completed_steps / onboarding_completed. Requiring it here made the schema
-  // reject every real response, so the wizard's first load errored out with "We couldn't load
-  // your onboarding" for every newly registered user — the console was unusable from signup.
+  // The gateway now emits this on both `GET /v1/onboarding/state` and `POST /v1/onboarding/advance`,
+  // so it is required rather than defaulted. It had to be defaulted before: the server dropped the
+  // field, and requiring it rejected every real response, which broke the wizard's first load for
+  // every newly registered user.
   //
-  // Defaulting to "pending" is the correct reading of an absent value: `fromServerState` only
-  // branches on "skipped", and treats everything else as "no steps skipped", which is exactly
-  // the state of someone who has just signed up. When the backend starts sending the field, a
-  // real value simply overrides the default and nothing here needs to change.
-  workspace_disposition: WorkspaceDispositionSchema.default("pending"),
+  // It is the field that makes an explicit skip survive a page reload. Without it the server could
+  // not tell a deliberate skip from an unfinished wizard, and `POST /v1/onboarding/complete`
+  // answered 412 to anyone who skipped workspace setup.
+  workspace_disposition: WorkspaceDispositionSchema,
 });
 export type OnboardingStateResponse = z.infer<typeof OnboardingStateResponseSchema>;
 

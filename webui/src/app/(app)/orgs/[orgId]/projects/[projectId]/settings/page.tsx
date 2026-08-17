@@ -42,12 +42,6 @@ export default function ProjectSettingsPage() {
           Prepaid balance, credit expiry, top-ups, subscriptions, and invoices are owned by the
           organization billing account.
         </CardDescription>
-        <Link
-          href={`/orgs/${orgId}/billing`}
-          className="text-primary mt-4 inline-block text-sm font-medium"
-        >
-          Manage organization billing
-        </Link>
       </Card>
 
       <ProjectDangerZone />

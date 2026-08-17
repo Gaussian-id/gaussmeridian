@@ -1,8 +1,6 @@
 import Link from "next/link";
 
-import { siteConfig } from "@core/config/site.config";
-
-import { MeridianMark } from "@/components/auth/meridian-mark";
+import { BrandLogo } from "@/components/brand";
 
 import type { ReactNode } from "react";
 
@@ -40,13 +38,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           />
         </svg>
 
-        <Link href="/" className="relative flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/10 ring-1 ring-white/15">
-            <MeridianMark className="h-5 w-5 text-white" />
-          </span>
-          <span className="font-display text-xl font-semibold tracking-tight">
-            {siteConfig.shortName}
-          </span>
+        {/* The panel is permanently `bg-brand-gradient`, so the ink is fixed rather than themed. */}
+        <Link
+          href="/"
+          className="relative flex items-center rounded-sm focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
+        >
+          <BrandLogo tone="light" height={40} />
         </Link>
 
         <div className="relative flex flex-col gap-4">

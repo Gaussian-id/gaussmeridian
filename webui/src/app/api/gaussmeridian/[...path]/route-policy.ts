@@ -28,6 +28,11 @@ const BFF_ROUTE_POLICY: readonly BffRouteRule[] = [
   { methods: ["POST", "DELETE"], path: exact("v1/auth/me/deletion-request") },
 
   { methods: ["GET", "POST"], path: exact("v1/api/keys") },
+
+  // BYOK — customers registering their own provider credentials. The encrypted key material
+  // never comes back over this bridge; GET returns provider names only.
+  { methods: ["GET", "POST"], path: exact("v1/byok/keys") },
+  { methods: ["DELETE"], path: exact(`v1/byok/keys/${SEGMENT}`) },
   { methods: ["POST"], path: exact("v1/api/keys/revoke") },
   { methods: ["GET", "PATCH"], path: exact("v1/project/settings") },
 

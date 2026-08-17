@@ -1,6 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { siteConfig } from "@core/config";
 import { TenancyProvider } from "@core/providers";
 
 import { createFakeRegistry } from "@/test/fakes";
@@ -61,5 +62,19 @@ describe("AppSidebar", () => {
     setup({ superadmin: true });
 
     expect(await screen.findByRole("link", { name: /^admin$/i })).toHaveAttribute("href", "/admin");
+  });
+
+  it("renders the brand logo once, linking home (PRD-29)", () => {
+    setup();
+
+    expect(screen.getAllByRole("img", { name: `${siteConfig.name} logo` })).toHaveLength(1);
+    const home = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/");
+    expect(home).toBeTruthy();
+  });
+
+  it("no longer prints the product name as a text wordmark (PRD-29)", () => {
+    setup();
+
+    expect(screen.queryByText(siteConfig.name)).not.toBeInTheDocument();
   });
 });

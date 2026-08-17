@@ -40,7 +40,7 @@ export function CreateOrgForm({
       { name: trimmed },
       {
         onSuccess: (org) =>
-          router.push(completion === "billing" ? `/orgs/${org.id}/billing` : `/orgs/${org.id}`),
+          router.push(`/orgs/${org.id}`),
       },
     );
   }

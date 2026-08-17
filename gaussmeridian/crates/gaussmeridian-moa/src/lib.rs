@@ -79,7 +79,9 @@
 //!
 //! ## License
 //!
-//! This project is licensed under the MIT License. See `LICENSE` (to be created) for details.
+//! GNU Affero General Public License v3.0 only (`AGPL-3.0-only`), inherited from the
+//! GaussMeridian workspace. The full text is the repository-root `LICENSE`; this crate
+//! carries no separate license of its own.
 
 pub mod agents;
 pub mod cache;

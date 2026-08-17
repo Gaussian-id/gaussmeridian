@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import { isAuthError } from "@core/adapters/auth-error";
@@ -18,11 +18,6 @@ import {
   validatePassword,
   validateUsername,
 } from "@/lib/auth/validate-credentials";
-import {
-  ADD_CREDIT_LOGIN_HREF,
-  ADD_CREDIT_ORG_RESOLVER_HREF,
-  isAddCreditIntent,
-} from "@/lib/billing/billing-intent";
 
 interface FieldErrors {
   email?: string;
@@ -47,8 +42,6 @@ function serverSnapshot(): boolean {
 
 function SignupForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fundingIntent = isAddCreditIntent(searchParams.get("intent"));
   const signUp = useSignUp();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -75,11 +68,7 @@ function SignupForm() {
       { email, username: handle, password },
       {
         onSuccess: () =>
-          router.push(
-            fundingIntent
-              ? `/onboarding?redirectTo=${encodeURIComponent(ADD_CREDIT_ORG_RESOLVER_HREF)}`
-              : "/onboarding",
-          ),
+          router.push("/onboarding"),
       },
     );
   }
@@ -116,7 +105,7 @@ function SignupForm() {
           />
           {emailTaken && (
             <Link
-              href={fundingIntent ? ADD_CREDIT_LOGIN_HREF : "/login"}
+              href="/login"
               className="text-primary text-sm font-medium"
             >
               Sign in instead →
@@ -170,7 +159,7 @@ function SignupForm() {
       <p className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
         <Link
-          href={fundingIntent ? ADD_CREDIT_LOGIN_HREF : "/login"}
+          href="/login"
           className="text-primary font-medium"
         >
           Sign in

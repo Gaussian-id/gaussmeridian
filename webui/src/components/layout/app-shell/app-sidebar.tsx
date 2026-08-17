@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { siteConfig } from "@core/config";
+import { BrandLogo } from "@/components/brand";
 
 import { AppNavigation } from "./app-navigation";
 
@@ -13,8 +13,11 @@ export function AppSidebar() {
   return (
     <aside className="bg-card border-border hidden w-60 shrink-0 flex-col border-r md:flex">
       <div className="flex h-16 items-center px-6">
-        <Link href="/" className="font-display text-lg font-semibold tracking-tight">
-          {siteConfig.name}
+        <Link
+          href="/"
+          className="focus-visible:ring-ring flex items-center rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          <BrandLogo height={32} />
         </Link>
       </div>
 
