@@ -9,11 +9,20 @@ use reqwest::Client;
 use std::pin::Pin;
 // Arc is not used in this module
 
+/// Claude models assumed when no allowlist is configured. Every name here is one the generated
+/// catalog actually seeds — the previous defaults were `claude-3-*-2024*` ids that appear in no
+/// catalog and that `supports_model()` could never route to.
+const DEFAULT_MODELS: [&str; 3] = ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4.5"];
+
 #[derive(Debug, Clone)]
 pub struct AnthropicConfig {
     pub base_config: BaseProviderConfig,
     pub api_version: String,
     pub max_tokens: u32,
+    /// Set once `with_model_allowlist` installs a non-empty list, exactly as in `OpenAIConfig`
+    /// and `GeminiConfig`. Kept private so the only way to make the allowlist authoritative is
+    /// through the builder.
+    model_allowlist_is_authoritative: bool,
 }
 
 impl Default for AnthropicConfig {
@@ -22,6 +31,49 @@ impl Default for AnthropicConfig {
             base_config: BaseProviderConfig::new("anthropic".to_string(), "".to_string()),
             api_version: "2023-06-01".to_string(),
             max_tokens: 4096,
+            model_allowlist_is_authoritative: false,
+        }
+    }
+}
+
+impl AnthropicConfig {
+    pub fn new(api_key: String) -> Self {
+        Self {
+            base_config: BaseProviderConfig::new("anthropic".to_string(), api_key)
+                .with_base_url("https://api.anthropic.com".to_string()),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_base_url(mut self, base_url: String) -> Self {
+        self.base_config = self.base_config.with_base_url(base_url);
+        self
+    }
+
+    /// Install the generated `[providers.anthropic].models` allowlist from `gaussmeridian.toml`.
+    ///
+    /// Mirrors `OpenAIConfig::with_model_allowlist` / `GeminiConfig::with_model_allowlist`.
+    /// Anthropic previously had no such builder, so `app.rs` hardcoded a two-entry
+    /// `claude-3-*-20240229` list inline and the generated allowlist was ignored entirely —
+    /// `supports_model()` is an exact match against `base_config.models`, so every catalog name
+    /// was unroutable while the two hardcoded ids the catalog never seeds were the only
+    /// matches. That is MG-RI-BUG-010 still live for this one provider.
+    pub fn with_model_allowlist(mut self, models: Vec<String>) -> Self {
+        if !models.is_empty() {
+            self.base_config = self.base_config.with_models(models);
+            self.model_allowlist_is_authoritative = true;
+        }
+        self
+    }
+
+    /// The models this adapter will accept — the configured allowlist when one is authoritative,
+    /// otherwise [`DEFAULT_MODELS`]. Single source for `capabilities()` and `list_models()` so
+    /// the two can never disagree.
+    fn effective_models(&self) -> Vec<String> {
+        if self.model_allowlist_is_authoritative {
+            self.base_config.models.clone()
+        } else {
+            DEFAULT_MODELS.iter().map(|m| m.to_string()).collect()
         }
     }
 }
@@ -429,36 +481,28 @@ impl LLMProvider for AnthropicProvider {
         })
     }
 
+    /// Report exactly what `supports_model()` will accept — the configured allowlist.
+    ///
+    /// This used to return three hardcoded `claude-3-*-2024*` ids with a frozen
+    /// `created: 1709251200`, which no catalog seeds and `supports_model()` does not match. So
+    /// `GET /v1/models` advertised three ids that `GET /v1/models/:id` answers 404 for and that
+    /// routing can never select, while every real Claude model stayed invisible (MG-RI-BUG-012).
+    /// Deriving the list from `base_config.models` makes the two agree by construction.
     async fn list_models(&self) -> Result<Vec<Model>, Self::Error> {
-        Ok(vec![
-            Model {
-                id: "claude-3-opus-20240229".to_string(),
+        Ok(self
+            .config
+            .effective_models()
+            .into_iter()
+            .map(|id| Model {
+                id,
                 object: "model".to_string(),
-                created: 1709251200,
+                created: 0,
                 owned_by: "anthropic".to_string(),
                 permission: None,
                 root: None,
                 parent: None,
-            },
-            Model {
-                id: "claude-3-sonnet-20240229".to_string(),
-                object: "model".to_string(),
-                created: 1709251200,
-                owned_by: "anthropic".to_string(),
-                permission: None,
-                root: None,
-                parent: None,
-            },
-            Model {
-                id: "claude-3-haiku-20240307".to_string(),
-                object: "model".to_string(),
-                created: 1709251200,
-                owned_by: "anthropic".to_string(),
-                permission: None,
-                root: None,
-                parent: None,
-            },
-        ])
+            })
+            .collect())
     }
 
     fn metadata(&self) -> ProviderMetadata {
@@ -505,11 +549,7 @@ impl LLMProvider for AnthropicProvider {
             supports_embeddings: true,
             max_context_length: Some(200000),
             max_tokens_per_request: Some(4096),
-            supported_models: vec![
-                "claude-3-opus-20240229".to_string(),
-                "claude-3-sonnet-20240229".to_string(),
-                "claude-3-haiku-20240307".to_string(),
-            ],
+            supported_models: self.config.effective_models(),
         }
     }
 
@@ -529,8 +569,11 @@ impl LLMProvider for AnthropicProvider {
         })
     }
 
+    /// Routes through `effective_models()` — the same source as `capabilities()` and
+    /// `list_models()`. Reading `base_config.models` directly meant an unconfigured adapter
+    /// (empty list) accepted nothing at all, while the list endpoint still advertised models.
     async fn supports_model(&self, model: &str) -> bool {
-        self.config.base_config.models.contains(&model.to_string())
+        self.config.effective_models().iter().any(|m| m == model)
     }
 
     fn get_config(&self) -> ProviderConfig {
