@@ -1,16 +1,45 @@
 # Support
 
-GaussMeridian is community-supported during Technical Preview.
+GaussMeridian is a community project without a paid support tier. Here is
+where to go depending on what you need.
 
-## Use the right channel
+## I found a bug
 
-- Reproducible defect: GitHub bug report.
-- Bounded enhancement: GitHub feature request.
-- Setup question or design discussion: GitHub Discussions after enabled.
-- Vulnerability: private process in [SECURITY.md](SECURITY.md).
+Open a GitHub issue on this repository. Include:
 
-Include the operating system, deployment method, component versions, sanitized configuration shape, exact error, and minimal reproduction. Remove credentials and private data.
+- What you ran (`docker compose up -d`, a specific `curl`/API call, etc.)
+- What you expected versus what happened
+- Relevant logs (`docker compose logs gaussmeridian`), with any API keys or
+  tokens redacted
+- Your environment (OS, Docker version, `docker compose version`)
 
-## Support boundaries
+Before filing, check the "Known limitation" note in `README.md` and the
+"Known blocker" section of `docs/evidence/report.md` — the zero-key quickstart
+path's inability to complete an inference is a known, already-escalated issue,
+not a new bug.
 
-Maintainers do not guarantee response times, individual deployment consulting, provider availability, data recovery, or compatibility with undocumented modifications. Only documented releases and upgrade paths can become supported. Community answers are guidance, not a service-level commitment.
+## I have a security concern
+
+Do not open a public issue. Follow [`SECURITY.md`](SECURITY.md) instead.
+
+## I have a question about using GaussMeridian
+
+Use GitHub Discussions on this repository for usage questions, configuration
+help, and general "how do I..." questions.
+
+## I want to contribute a fix or feature
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first — it documents the supported
+native-development preview stack, the test/qualification loop, and the
+pull-request checklist.
+
+## I want to report an abuse of the GaussMeridian name or marks
+
+See [`TRADEMARKS.md`](TRADEMARKS.md).
+
+## Response expectations
+
+This project does not currently have a staffed support team or a published
+response-time SLA. Maintainers respond on a best-effort basis. See
+[`GOVERNANCE.md`](GOVERNANCE.md) for who currently makes decisions on this
+project.

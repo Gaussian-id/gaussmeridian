@@ -22,7 +22,7 @@ version = "3.0.0"
 edition = "2021"
 authors = ["GaussMeridian Contributors"]
 license = "AGPL-3.0-only"
-repository = "https://github.com/gaussmeridian/gaussmeridian"
+repository = "https://github.com/Gaussian-id/gaussmeridian"
 keywords = ["llm", "router", "ai", "openai", "compatible", "multi-agent"]
 categories = ["api-bindings", "asynchronous", "web-programming"]
 

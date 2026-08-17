@@ -10,7 +10,7 @@ export type NavbarPosition = "sticky" | "fixed" | "static";
  */
 const SOURCE_OFFER_URL =
   process.env.NEXT_PUBLIC_SOURCE_OFFER_URL?.trim() ||
-  "https://github.com/Gaussian-id/gauss-meridian";
+  "https://github.com/Gaussian-id/gaussmeridian";
 
 /**
  * Boilerplate-level configuration. Per-fork branding and layout behavior live here so a

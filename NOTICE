@@ -1,14 +1,145 @@
 GaussMeridian
-Copyright 2026 Gaussian
+Copyright (C) 2026 Gaussian
 
-This product includes software developed by Gaussian and by individual
-contributors to the GaussMeridian project.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3.
 
-This distribution includes the gaussmoa crate (gaussmeridian/crates/gaussmeridian-moa),
-originally authored by Risman Adnan as part of GaussMeridian's own development and
-distributed here under the same Apache License, Version 2.0 as the rest of this
-project.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 
-This product may include third-party software components under their own license
-terms. See THIRD_PARTY_NOTICES.md for the full list of third-party components,
-their licenses, and required attributions.
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: AGPL-3.0-only
+
+------------------------------------------------------------------------------
+Additional term under AGPL-3.0 Section 7(e)
+------------------------------------------------------------------------------
+
+Pursuant to Section 7(e) of the GNU AGPL, this program is distributed with one
+supplementary term: rights under trademark law for use of the trade names,
+trademarks, service marks, and product names of this project — including
+"GaussMeridian" and any associated logos — are declined, except for the
+nominative and descriptive uses set out in TRADEMARKS.md. That file states the
+term in full and is part of this distribution. Nothing in it restricts any right
+granted by the AGPL itself.
+
+------------------------------------------------------------------------------
+Additional permission under AGPL-3.0 Section 7 (linking exception)
+------------------------------------------------------------------------------
+
+Two dependencies of this program are distributed under terms that are not
+compatible with the GNU AGPL. Without the permission below, conveying a build
+containing them would not be possible:
+
+  - GSAP (webui), under the GreenSock Standard License. Free of charge, but
+    proprietary, and not an open-source license.
+  - The SurrealDB Rust client crate "surrealdb", under the Business Source
+    License 1.1 (Change Date 2029-09-17, Change License Apache-2.0).
+
+Two facts narrow what the permission actually has to cover for SurrealDB. BSL
+1.1's Additional Use Grant already permits any use that is not a "Database
+Service", and GaussMeridian is not one as that grant defines the term. The
+SurrealDB server itself runs as a separate program in a separate container
+reached over the network, which is mere aggregation rather than combination.
+Only the linked client crate forms a combined work with this Program.
+
+Accordingly, the copyright holders of this Program grant the following:
+
+    Additional permission under GNU AGPL version 3 section 7:
+
+    If you modify this Program, or any covered work, by linking or combining it
+    with GSAP (or a modified version of that library), or with the SurrealDB
+    Rust client library "surrealdb" (or a modified version of that library),
+    containing parts covered by the terms of the GreenSock Standard License and
+    the Business Source License 1.1 respectively, the licensors of this Program
+    grant you additional permission to convey the resulting work. Corresponding
+    Source for a non-source form of such a combination shall include the source
+    code for the parts of GSAP and "surrealdb" used as well as that of the
+    covered work.
+
+This permission cannot and does not alter the terms under which GSAP or
+"surrealdb" are licensed to you by their own licensors; obtain those and comply
+with them separately. Under Section 7 you may remove this permission from any
+copy you convey, but removing it does not remove the underlying incompatibility.
+
+It is a remedy, not a resolution. GSAP's used API surface is small and
+replaceable by the Web Animations API plus IntersectionObserver, or by an
+MIT-licensed library; removing it would let half of this clause be deleted, and
+that is a better end state than carrying a permanent exception for an animation
+library. The SurrealDB crate converts to Apache-2.0 on its Change Date, after
+which the rest becomes unnecessary.
+
+PENDING LEGAL REVIEW (governance gate G3). The validity of this permission
+depends on it having been granted by the copyright holders of every part of this
+Program. No contributor licensing agreement covers contributions made while this
+repository was Apache-2.0. The Apache-2.0 grant permits sublicensing, which is
+why this is believed sound — but "believed sound" is not counsel's opinion and
+must not be recorded as one. CONTRIBUTING.md carries a Developer Certificate of
+Origin covering contributions from this point forward.
+
+------------------------------------------------------------------------------
+Source offer (AGPL-3.0 Section 13)
+------------------------------------------------------------------------------
+
+GaussMeridian is a network-facing gateway. Section 13 of the GNU AGPL requires
+that anyone who interacts with a running instance of this program remotely
+through a computer network be offered the Corresponding Source of that instance,
+free of charge, through a network server.
+
+The Corresponding Source for unmodified GaussMeridian is:
+
+  https://github.com/Gaussian-id/gaussmeridian
+
+A running instance publishes this offer in two places, so a network user never
+has to be told where to look:
+
+  - The gateway advertises it in the `source` object returned by `GET /` and in
+    the `x-source-offer` header on every HTTP response it serves.
+  - The WebUI links it from the footer of every page.
+
+If you deploy a MODIFIED version of GaussMeridian and let anyone reach it over a
+network, that offer is yours to satisfy, not ours. You must publish your own
+Corresponding Source — your modifications included — and point the two
+mechanisms above at it. `SOURCE_OFFER_URL` (gateway) and
+`NEXT_PUBLIC_SOURCE_OFFER_URL` (WebUI) exist for exactly that: set both to a URL
+serving your build's source before you expose a modified instance to users.
+
+------------------------------------------------------------------------------
+Status: PENDING LEGAL REVIEW (governance gate G3)
+------------------------------------------------------------------------------
+
+This NOTICE file and the accompanying THIRD_PARTY_NOTICES.md were generated
+mechanically from this codebase's actual dependency graph (`cargo tree` for the
+Rust workspace under `gaussmeridian/`, `pnpm licenses list` for the `webui`
+Next.js application) — they are not hand-written from package names, and they
+have not yet been reviewed by counsel. Governance gate G3 (legal review) is
+separate from and has not yet cleared this candidate. Treat the contents as an
+accurate machine-generated snapshot of what is actually bundled, not as a
+legally-finalized attribution document.
+
+The relicensing of this project from Apache-2.0 to AGPL-3.0-only is itself part
+of what G3 must review. Two consequences of that change are open and tracked in
+THIRD_PARTY_NOTICES.md rather than resolved here: the GPL-compatibility of every
+bundled dependency, and the absence of any contributor licensing agreement or
+DCO covering code contributed while this repository was Apache-2.0.
+
+------------------------------------------------------------------------------
+Third-party attribution
+------------------------------------------------------------------------------
+
+GaussMeridian bundles and depends on numerous third-party open-source
+components. The full, generated inventory — package name, version, and license
+per dependency, for both the Rust workspace and the webui's production
+JavaScript dependencies — is maintained in THIRD_PARTY_NOTICES.md in this same
+directory, together with a per-dependency GPL-compatibility assessment.
+
+The AGPL, unlike the Apache License, defines no NOTICE-file mechanism: nothing
+in this file is a condition of the license grant, and reproducing it is not
+required by Section 4 or Section 5. It is retained as attribution and as the
+front door to the source offer above. Third-party components remain under their
+own licenses; where an upstream component ships its own NOTICE or attribution
+file whose terms require reproduction, that obligation survives independently of
+GaussMeridian's own license and is carried in THIRD_PARTY_NOTICES.md.

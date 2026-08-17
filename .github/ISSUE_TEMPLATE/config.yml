@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security report
-    url: https://github.com/Gaussian-id/gauss-meridian/security/advisories/new
+    url: https://github.com/Gaussian-id/gaussmeridian/security/advisories/new
     about: Report suspected vulnerabilities privately.
   - name: Support guidance
-    url: https://github.com/Gaussian-id/gauss-meridian/blob/main/SUPPORT.md
+    url: https://github.com/Gaussian-id/gaussmeridian/blob/main/SUPPORT.md
     about: Choose the correct support channel before filing.
