@@ -2,14 +2,14 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="webui/public/logo/meridian-lockup-light.svg">
-  <img src="webui/public/logo/meridian-lockup-dark.svg" alt="GaussMeridian" width="440">
+  <img src="webui/public/logo/meridian-lockup-dark.svg" alt="GaussMeridian — self-hosted LLM gateway and router" width="440">
 </picture>
 
-<br><br>
+# GaussMeridian
 
-**One OpenAI-compatible endpoint in front of every model you use.**
+**Self-hosted LLM gateway and router — one OpenAI-compatible endpoint in front of every model you use.**
 
-Self-hosted. Routes across OpenAI, Anthropic, Google and local models, with a console for keys, projects, budgets and usage.
+Route requests across OpenAI, Anthropic, Google Gemini and local models, with a web console for API keys, projects, budgets and usage. Written in Rust, deployed with Docker.
 
 [![License](https://img.shields.io/badge/license-AGPL--3.0-1A60E6?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/docker/v/gaussianid/gaussmeridian?label=docker&style=flat-square&color=6D41F2)](https://hub.docker.com/r/gaussianid/gaussmeridian)
@@ -18,6 +18,17 @@ Self-hosted. Routes across OpenAI, Anthropic, Google and local models, with a co
 </div>
 
 ---
+
+## What it does
+
+- **One endpoint, every provider** — OpenAI, Anthropic, Google Gemini and local models behind a single OpenAI-compatible API. Point an existing SDK at it and change nothing else.
+- **Routing you control** — per-project policy over cost, quality floor and model allowlists, with the routing decision recorded for every request.
+- **Keys, projects, budgets** — a web console for API key management, project scoping and monthly spend limits.
+- **BYOK** — customer-supplied provider keys, AES-256 encrypted at rest, managed per project.
+- **Self-hosted** — Docker Compose with SurrealDB and Redis. Nothing leaves your infrastructure.
+
+If you are evaluating LLM gateways and proxies — LiteLLM, OpenRouter, Portkey — this is the same
+category: one API in front of many model providers, run on your own hardware.
 
 ## Quickstart
 
