@@ -157,7 +157,12 @@ impl LLMProvider for AnthropicProvider {
             .json(&anthropic_request)
             .send()
             .await
-            .map_err(|e| ProviderError::Unavailable(format!("Request failed: {}", crate::error_utils::sanitize_error_message(&e.to_string()))))?;
+            .map_err(|e| {
+                ProviderError::Unavailable(format!(
+                    "Request failed: {}",
+                    crate::error_utils::sanitize_error_message(&e.to_string())
+                ))
+            })?;
 
         if !response.status().is_success() {
             return Err(ProviderError::BadRequest(format!(
@@ -237,7 +242,12 @@ impl LLMProvider for AnthropicProvider {
             .json(&anthropic_request)
             .send()
             .await
-            .map_err(|e| ProviderError::Unavailable(format!("Request failed: {}", crate::error_utils::sanitize_error_message(&e.to_string()))))?;
+            .map_err(|e| {
+                ProviderError::Unavailable(format!(
+                    "Request failed: {}",
+                    crate::error_utils::sanitize_error_message(&e.to_string())
+                ))
+            })?;
 
         if !response.status().is_success() {
             return Err(ProviderError::BadRequest(format!(
@@ -306,7 +316,12 @@ impl LLMProvider for AnthropicProvider {
             .json(&anthropic_request)
             .send()
             .await
-            .map_err(|e| ProviderError::Unavailable(format!("Request failed: {}", crate::error_utils::sanitize_error_message(&e.to_string()))))?;
+            .map_err(|e| {
+                ProviderError::Unavailable(format!(
+                    "Request failed: {}",
+                    crate::error_utils::sanitize_error_message(&e.to_string())
+                ))
+            })?;
 
         if !response.status().is_success() {
             return Err(ProviderError::BadRequest(format!(
@@ -435,7 +450,12 @@ impl LLMProvider for AnthropicProvider {
             .json(&anthropic_request)
             .send()
             .await
-            .map_err(|e| ProviderError::Unavailable(format!("Request failed: {}", crate::error_utils::sanitize_error_message(&e.to_string()))))?;
+            .map_err(|e| {
+                ProviderError::Unavailable(format!(
+                    "Request failed: {}",
+                    crate::error_utils::sanitize_error_message(&e.to_string())
+                ))
+            })?;
 
         if !response.status().is_success() {
             return Err(ProviderError::BadRequest(format!(
